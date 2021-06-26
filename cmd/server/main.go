@@ -1,9 +1,13 @@
 package main
 
 import (
+	"dorayaki/configs"
 	"dorayaki/configs/database"
 	"dorayaki/internal/models"
 	"log"
+
+	"github.com/go-chi/chi"
+	"github.com/go-chi/cors"
 )
 
 // const defaultPort = "8080"
@@ -18,4 +22,9 @@ func main() {
 	database.DB.AutoMigrate(&models.Dorayaki{})
 	database.DB.AutoMigrate(&models.Toko{})
 	// TODO:handlers.
+	r := chi.NewRouter()
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: configs.AllowedOrigins,
+	}))
+
 }
