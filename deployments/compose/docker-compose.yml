@@ -1,0 +1,30 @@
+# docker-compose.yml
+version: '3'
+services:
+  dorayaki-dev:
+    container_name: dorayaki-dev
+    volumes:
+      - ../../:/app:z
+    build:
+        context: ../../
+        dockerfile: builds/server/Dockerfile
+    env_file: ../../builds/server/.env
+    ports:
+      - 8080:8080
+    networks:
+      - dbconnect
+    depends_on:
+      - mariadb
+    restart: on-failure
+  mariadb:
+    container_name: mariadb-dev
+    build: ../../builds/database
+    env_file: ../../builds/database/.env
+    ports:
+      - 3307:3306
+    networks:
+      - dbconnect
+    restart: on-failure
+networks:
+  dbconnect:
+    driver: bridge
