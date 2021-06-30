@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS 'toko_dorayaki';
+DROP TABLE IF EXISTS `toko_dorayaki`;

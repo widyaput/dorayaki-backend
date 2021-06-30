@@ -1,11 +1,9 @@
 CREATE TABLE IF NOT EXISTS `dorayaki` (
-  `rasa` varchar(191) NOT NULL,
-  `toko_id` bigint(20) NOT NULL,
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `rasa` longtext NOT NULL,
   `deskripsi` longtext NOT NULL,
-  `image_url` longtext NOT NULL,
-  `stok` bigint(20) DEFAULT 0,
+  `base64` longtext NOT NULL,
   `created_at` bigint(20) DEFAULT NULL,
   `updated_at` bigint(20) DEFAULT NULL,
-  PRIMARY KEY (`rasa`),
-  CONSTRAINT `chk_dorayaki_stok` CHECK (`stok` >= 0)
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1

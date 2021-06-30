@@ -1,16 +1,17 @@
 package main
 
 import (
-	"dorayaki/configs"
 	"dorayaki/configs/database"
+	"dorayaki/internal/handlers"
 	"dorayaki/internal/models"
 	"log"
-
-	"github.com/go-chi/chi"
-	"github.com/go-chi/cors"
+	"net"
+	"net/http"
+	"os"
 )
 
-// const defaultPort = "8080"
+const defaultPort = "8080"
+
 // POST /api/v1/orders
 
 func main() {
@@ -18,13 +19,24 @@ func main() {
 		log.Fatal("Error when connect to database")
 	}
 	log.Print("Success connect to database")
-	database.DB.AutoMigrate(&models.TokoDorayaki{})
-	database.DB.AutoMigrate(&models.Dorayaki{})
+	database.DB.SetupJoinTable(&models.Toko{}, "Dorayaki", &models.TokoDorayaki{})
 	database.DB.AutoMigrate(&models.Toko{})
+	database.DB.AutoMigrate(&models.Dorayaki{})
 	// TODO:handlers.
-	r := chi.NewRouter()
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins: configs.AllowedOrigins,
-	}))
 
+	r := handlers.NewHandler()
+	server := &http.Server{
+		Handler: r,
+	}
+
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		port = defaultPort
+	}
+	listener, err := net.Listen("tcp", ":"+port)
+	if err != nil {
+		log.Fatalf("Error occured: %s", err.Error())
+	}
+	server.Serve(listener)
 }

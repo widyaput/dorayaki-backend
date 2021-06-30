@@ -1,9 +1,20 @@
 package models
 
+import (
+	"net/http"
+
+	"github.com/go-chi/render"
+)
+
 type Response struct {
-	Status  int    `json:"status"`
-	Message string `json:"message"`
+	StatusCode int    `json:"status_code"`
+	Message    string `json:"message"`
 }
+
+var (
+	SuccessResponse       = &Response{StatusCode: 200, Message: "Success"}
+	SuccessCreateResponse = &Response{StatusCode: 201, Message: "Create Success"}
+)
 
 type ResponseDorayaki struct {
 	Response
@@ -13,4 +24,9 @@ type ResponseDorayaki struct {
 type ResponseToko struct {
 	Response
 	Data []Toko `json:"data"`
+}
+
+func (re *Response) Render(w http.ResponseWriter, r *http.Request) error {
+	render.Status(r, re.StatusCode)
+	return nil
 }

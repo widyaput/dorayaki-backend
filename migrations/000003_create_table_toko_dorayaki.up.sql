@@ -2,6 +2,8 @@ CREATE TABLE IF NOT EXISTS `toko_dorayaki` (
   `toko_id` bigint(20) NOT NULL,
   `dorayaki_id` bigint(20) NOT NULL,
   `stok` bigint(20) DEFAULT 0,
+  `created_at` bigint(20) DEFAULT NULL,
+  `updated_at` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`toko_id`,`dorayaki_id`),
   KEY `fk_toko_dorayaki_dorayaki` (`dorayaki_id`),
   CONSTRAINT `fk_toko_dorayaki_dorayaki` FOREIGN KEY (`dorayaki_id`) REFERENCES `dorayaki` (`id`),
