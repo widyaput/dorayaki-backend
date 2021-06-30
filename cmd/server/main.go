@@ -22,7 +22,6 @@ func main() {
 	database.DB.SetupJoinTable(&models.Toko{}, "Dorayaki", &models.TokoDorayaki{})
 	database.DB.AutoMigrate(&models.Toko{})
 	database.DB.AutoMigrate(&models.Dorayaki{})
-	// TODO:handlers.
 
 	r := handlers.NewHandler()
 	server := &http.Server{

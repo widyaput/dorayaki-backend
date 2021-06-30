@@ -25,6 +25,9 @@ func shops(router chi.Router) {
 		router.Get("/", getShop)
 		router.Put("/", updateShop)
 		router.Delete("/", deleteShop)
+		router.Route("/{dorayakiId}", func(router chi.Router) {
+
+		})
 	})
 }
 
@@ -34,7 +37,8 @@ func createShop(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, models.ErrBadRequest)
 		return
 	}
-	if rs := database.DB.Create(&shop); rs.Error != nil {
+	// Omit dorayaki. Dorayaki need to added to database using /api/v1/dorayakis.
+	if rs := database.DB.Omit("Dorayaki").Omit("Stok").Create(&shop); rs.Error != nil {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return
 	}
@@ -55,7 +59,7 @@ func updateShop(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, models.ErrBadRequest)
 		return
 	}
-	if rs := database.DB.Where("ID = ?", id).First(&oldShop); rs.Error != nil {
+	if rs := database.DB.Joins("Stok").First(&oldShop, id); rs.Error != nil {
 		render.Render(w, r, models.ErrNotFound)
 		return
 	}
@@ -67,6 +71,12 @@ func updateShop(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return
 	}
+	var dorayakis []models.Dorayaki
+	if err := database.DB.Model(oldShop).Association("Dorayaki").Find(&dorayakis); err != nil {
+		render.Render(w, r, models.ErrorRenderer(err))
+		return
+	}
+	oldShop.Dorayaki = dorayakis
 	resp := models.ResponseToko{Response: *models.SuccessResponse}
 	resp.Data = append(resp.Data, oldShop)
 	if err := render.Render(w, r, &resp); err != nil {
@@ -86,17 +96,12 @@ func deleteShop(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return
 	}
-	// resp := *models.SuccessDeleteResponse
-	// if err := render.Render(w, r, &resp); err != nil {
-	// 	render.Render(w, r, models.ServerErrorRenderer(err))
-	// 	return
-	// }
 }
 
 func getShop(w http.ResponseWriter, r *http.Request) {
 	var shop models.Toko
 	id := r.Context().Value(keyShop).(int)
-	if rs := database.DB.Where("ID = ?", id).First(&shop); rs.Error != nil {
+	if rs := database.DB.Where("id = ?", id).Preload("Dorayaki").Preload("Stok").First(&shop); rs.Error != nil {
 		render.Render(w, r, models.ErrNotFound)
 		return
 	}
@@ -110,7 +115,7 @@ func getShop(w http.ResponseWriter, r *http.Request) {
 
 func getAllShop(w http.ResponseWriter, r *http.Request) {
 	var list []models.Toko
-	if rs := database.DB.Find(&list); rs.Error != nil {
+	if rs := database.DB.Preload("Dorayaki").Preload("Stok").First(&list); rs.Error != nil {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return
 	}

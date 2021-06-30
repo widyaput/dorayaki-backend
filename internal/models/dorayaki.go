@@ -9,9 +9,9 @@ import (
 // Dorayaki represents dorayaki in database.
 type Dorayaki struct {
 	ID        int64  `gorm:"primaryKey;autoIncrement"`
-	Rasa      string `gorm:"not null"`
-	Deskripsi string `gorm:"not null"`
-	ImageURL  string `gorm:"not null"`
+	Rasa      string `gorm:"not null" json:"rasa"`
+	Deskripsi string `gorm:"not null" json:"deskripsi"`
+	ImageURL  string `gorm:"not null" json:"image_url"`
 	CreatedAt int64  `gorm:"autoCreateTime"`
 	UpdatedAt int64  `gorm:"autoUpdateTime"`
 }

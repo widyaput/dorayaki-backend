@@ -7,4 +7,4 @@ CREATE TABLE IF NOT EXISTS `toko` (
   `created_at` bigint(20) DEFAULT NULL,
   `updated_at` bigint(20) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1
