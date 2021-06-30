@@ -13,13 +13,14 @@ import (
 )
 
 const (
-	keyShop key = iota
+	keyShop       key = iota
+	keyShopTarget key = iota
 )
 
 func shops(router chi.Router) {
 	router.Get("/", getAllShop)
 	router.Post("/", createShop)
-	// TODO: Pagination
+	// TODO: Pagination with query on kecamatan or provinsi.
 	router.Route("/{shopId}", func(router chi.Router) {
 		router.Use(ShopContext)
 		router.Get("/", getShop)
@@ -30,9 +31,14 @@ func shops(router chi.Router) {
 			router.Get("/", getStok)
 			router.Post("/", addStok)
 		})
+		router.Route("/transfer/{targetShopId}", func(router chi.Router) {
+			router.Use(TargetShopContext)
+			router.Post("/", transferStok)
+		})
 	})
 }
 
+// createShop will create shop, omit all dorayakis.
 func createShop(w http.ResponseWriter, r *http.Request) {
 	var shop models.Toko
 	if err := render.Bind(r, &shop); err != nil {
@@ -53,6 +59,7 @@ func createShop(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// updateShop will update information about specific shop. Will not update it's dorayaki.
 func updateShop(w http.ResponseWriter, r *http.Request) {
 	id := r.Context().Value(keyShop).(int)
 	var newShop models.Toko
@@ -61,7 +68,8 @@ func updateShop(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, models.ErrBadRequest)
 		return
 	}
-	if rs := database.DB.Joins("Stok").First(&oldShop, id); rs.Error != nil {
+	if rs := database.DB.Where("id = ?", id).Preload("Dorayaki").Preload("Stok").
+		First(&oldShop); rs.Error != nil {
 		render.Render(w, r, models.ErrNotFound)
 		return
 	}
@@ -73,12 +81,6 @@ func updateShop(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return
 	}
-	var dorayakis []models.Dorayaki
-	if err := database.DB.Model(oldShop).Association("Dorayaki").Find(&dorayakis); err != nil {
-		render.Render(w, r, models.ErrorRenderer(err))
-		return
-	}
-	oldShop.Dorayaki = dorayakis
 	resp := models.ResponseToko{Response: *models.SuccessResponse}
 	resp.Data = append(resp.Data, oldShop)
 	if err := render.Render(w, r, &resp); err != nil {
@@ -87,6 +89,7 @@ func updateShop(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// deleteShop will delete shop with specific id.
 func deleteShop(w http.ResponseWriter, r *http.Request) {
 	id := r.Context().Value(keyShop).(int)
 	var oldShop models.Toko
@@ -100,10 +103,12 @@ func deleteShop(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// getShop will retrive specific shop by id and retrieve all dorayaki it has.
 func getShop(w http.ResponseWriter, r *http.Request) {
 	var shop models.Toko
 	id := r.Context().Value(keyShop).(int)
-	if rs := database.DB.Where("id = ?", id).Preload("Dorayaki").Preload("Stok").First(&shop); rs.Error != nil {
+	if rs := database.DB.Where("id = ?", id).Preload("Dorayaki").Preload("Stok").
+		First(&shop); rs.Error != nil {
 		render.Render(w, r, models.ErrNotFound)
 		return
 	}
@@ -115,9 +120,10 @@ func getShop(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// getAllShop will get all shop without retrieving dorayaki it has.
 func getAllShop(w http.ResponseWriter, r *http.Request) {
 	var list []models.Toko
-	if rs := database.DB.Preload("Dorayaki").Preload("Stok").Find(&list); rs.Error != nil {
+	if rs := database.DB.Find(&list); rs.Error != nil {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return
 	}
@@ -129,11 +135,13 @@ func getAllShop(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// getStok will get stock of specific dorayaki at specific shop.
 func getStok(w http.ResponseWriter, r *http.Request) {
 	idShop := r.Context().Value(keyShop).(int)
 	idDorayaki := r.Context().Value(keyDorayaki).(int)
 	var stok models.TokoDorayaki
-	if rs := database.DB.Where("id = (?,?)", idShop, idDorayaki).FirstOrCreate(&stok); rs.Error != nil {
+	if rs := database.DB.Where("id = (?,?)", idShop, idDorayaki).
+		FirstOrCreate(&stok); rs.Error != nil {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return
 	}
@@ -145,6 +153,8 @@ func getStok(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// addStok will add specific dorayaki at specific shop.
+// Can reduce stok with input stock has negative value.
 func addStok(w http.ResponseWriter, r *http.Request) {
 	idShop := r.Context().Value(keyShop).(int)
 	idDorayaki := r.Context().Value(keyDorayaki).(int)
@@ -154,11 +164,12 @@ func addStok(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, models.ErrorRenderer(err))
 		return
 	}
-	if rs := database.DB.Where("id = (?,?)", idShop, idDorayaki).FirstOrCreate(&stok); rs.Error != nil {
+	if rs := database.DB.Where("id = (?,?)", idShop, idDorayaki).
+		FirstOrCreate(&stok); rs.Error != nil {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return
 	}
-	if stok.Stok-addStock.AddStok < 0 {
+	if stok.Stok+addStock.AddStok < 0 {
 		render.Render(w, r, models.ErrorRenderer(fmt.Errorf("stok tidak mencukupi")))
 		return
 	}
@@ -171,6 +182,39 @@ func addStok(w http.ResponseWriter, r *http.Request) {
 	resp.Data = append(resp.Data, stok)
 	if err := render.Render(w, r, &resp); err != nil {
 		render.Render(w, r, models.ServerErrorRenderer(err))
+		return
+	}
+}
+
+// transferStok will substitute some dorayakis from source shop and transfer it to target shop.
+// input stock must be positive.
+func transferStok(w http.ResponseWriter, r *http.Request) {
+	idSource := r.Context().Value(keyShop).(int)
+	idTarget := r.Context().Value(keyShopTarget).(int)
+	var source models.TokoDorayaki
+	var target models.TokoDorayaki
+	var stock models.InputTransfer
+	if err := render.Bind(r, &stock); err != nil {
+		render.Render(w, r, models.ErrorRenderer(err))
+		return
+	}
+	if rs := database.DB.Where("id = (?,?)", idSource, stock.IdDorayaki).
+		First(&source); rs.Error != nil {
+		render.Render(w, r, models.ErrNotFound)
+		return
+	}
+	if source.Stok-stock.Stock < 0 {
+		render.Render(w, r, models.ErrorRenderer(fmt.Errorf("stock tidak mencukupi")))
+		return
+	}
+	if rs := database.DB.Where("id = (?,?)", idTarget, stock.IdDorayaki).
+		FirstOrCreate(&target); rs.Error != nil {
+		render.Render(w, r, models.ErrorRenderer(rs.Error))
+		return
+	}
+	target.Stok += stock.Stock
+	if rs := database.DB.Save(&target); rs.Error != nil {
+		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return
 	}
 }
@@ -188,6 +232,22 @@ func ShopContext(next http.Handler) http.Handler {
 			return
 		}
 		ctx := context.WithValue(r.Context(), keyShop, id)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+func TargetShopContext(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		shopId := chi.URLParam(r, "targetShopId")
+		if shopId == "" {
+			render.Render(w, r, models.ErrorRenderer(fmt.Errorf("target shop ID is required")))
+			return
+		}
+		id, err := strconv.Atoi(shopId)
+		if err != nil {
+			render.Render(w, r, models.ErrorRenderer(fmt.Errorf("invalid target shop ID")))
+			return
+		}
+		ctx := context.WithValue(r.Context(), keyShopTarget, id)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

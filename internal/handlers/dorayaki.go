@@ -21,7 +21,8 @@ const (
 func dorayakis(router chi.Router) {
 	router.Get("/", getAllDorayaki)
 	router.Post("/", createDorayaki)
-	// TODO: Pagination
+	// TODO: Pagination with query rasa.
+	// TODO: Change routing to upload images here.
 	router.Route("/{dorayakiId}", func(router chi.Router) {
 		router.Use(DorayakiContext)
 		router.Get("/", getDorayaki)
