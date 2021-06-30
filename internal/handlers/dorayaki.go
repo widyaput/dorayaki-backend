@@ -63,7 +63,7 @@ func updateDorayaki(w http.ResponseWriter, r *http.Request) {
 	}
 	oldDorayaki.Deskripsi = newDorayaki.Deskripsi
 	oldDorayaki.Rasa = newDorayaki.Rasa
-	oldDorayaki.Base64 = newDorayaki.Base64
+	oldDorayaki.ImageURL = newDorayaki.ImageURL
 	if rs := database.DB.Save(&oldDorayaki); rs.Error != nil {
 		render.Render(w, r, models.ErrorRenderer((rs.Error)))
 		return

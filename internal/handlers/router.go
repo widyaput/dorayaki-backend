@@ -15,7 +15,7 @@ func NewHandler() http.Handler {
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins: configs.AllowedOrigins,
 	}))
-
+	router.Route("/assets", assets)
 	router.Route("/api/v1/", apiv1)
 	router.MethodNotAllowed(methodNotAllowedHandler)
 	router.NotFound(notFoundHandler)

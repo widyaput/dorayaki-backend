@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 )
 
 // Dorayaki represents dorayaki in database.
@@ -10,7 +11,7 @@ type Dorayaki struct {
 	ID        int64  `gorm:"primaryKey;autoIncrement"`
 	Rasa      string `gorm:"not null"`
 	Deskripsi string `gorm:"not null"`
-	Base64    string `gorm:"not null"`
+	ImageURL  string `gorm:"not null"`
 	CreatedAt int64  `gorm:"autoCreateTime"`
 	UpdatedAt int64  `gorm:"autoUpdateTime"`
 }
@@ -27,12 +28,12 @@ func (d *Dorayaki) Bind(r *http.Request) error {
 	if d.Deskripsi == "" {
 		return fmt.Errorf("deskripsi is required")
 	}
-	if d.Base64 == "" {
-		return fmt.Errorf("base64 image is required")
-	}
-	// if _, err := url.ParseRequestURI(d.ImageURL); err != nil {
-	// 	return fmt.Errorf("imageurl should be valid")
+	// if d.Base64 == "" {
+	// 	return fmt.Errorf("base64 image is required")
 	// }
+	if _, err := url.ParseRequestURI(d.ImageURL); err != nil {
+		return fmt.Errorf("imageurl should be valid")
+	}
 	return nil
 }
 
