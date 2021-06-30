@@ -23,6 +23,9 @@ func main() {
 	database.DB.AutoMigrate(&models.Toko{})
 	database.DB.AutoMigrate(&models.Dorayaki{})
 
+	database.DB.Migrator().CreateConstraint(&models.TokoDorayaki{}, "TokoID")
+	database.DB.Migrator().CreateConstraint(&models.TokoDorayaki{}, "DorayakiID")
+
 	r := handlers.NewHandler()
 	server := &http.Server{
 		Handler: r,

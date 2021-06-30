@@ -26,7 +26,9 @@ func shops(router chi.Router) {
 		router.Put("/", updateShop)
 		router.Delete("/", deleteShop)
 		router.Route("/{dorayakiId}", func(router chi.Router) {
-
+			router.Use(DorayakiContext)
+			router.Get("/", getStok)
+			router.Post("/", addStok)
 		})
 	})
 }
@@ -115,14 +117,60 @@ func getShop(w http.ResponseWriter, r *http.Request) {
 
 func getAllShop(w http.ResponseWriter, r *http.Request) {
 	var list []models.Toko
-	if rs := database.DB.Preload("Dorayaki").Preload("Stok").First(&list); rs.Error != nil {
+	if rs := database.DB.Preload("Dorayaki").Preload("Stok").Find(&list); rs.Error != nil {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return
 	}
 	resp := models.ResponseToko{Response: *models.SuccessResponse}
 	resp.Data = list
 	if err := render.Render(w, r, &resp); err != nil {
+		render.Render(w, r, models.ServerErrorRenderer(err))
+		return
+	}
+}
+
+func getStok(w http.ResponseWriter, r *http.Request) {
+	idShop := r.Context().Value(keyShop).(int)
+	idDorayaki := r.Context().Value(keyDorayaki).(int)
+	var stok models.TokoDorayaki
+	if rs := database.DB.Where("id = (?,?)", idShop, idDorayaki).FirstOrCreate(&stok); rs.Error != nil {
+		render.Render(w, r, models.ErrorRenderer(rs.Error))
+		return
+	}
+	resp := models.ResponseStok{Response: *models.SuccessResponse}
+	resp.Data = append(resp.Data, stok)
+	if err := render.Render(w, r, &resp); err != nil {
+		render.Render(w, r, models.ServerErrorRenderer(err))
+		return
+	}
+}
+
+func addStok(w http.ResponseWriter, r *http.Request) {
+	idShop := r.Context().Value(keyShop).(int)
+	idDorayaki := r.Context().Value(keyDorayaki).(int)
+	var stok models.TokoDorayaki
+	var addStock models.InputStok
+	if err := render.Bind(r, &addStock); err != nil {
 		render.Render(w, r, models.ErrorRenderer(err))
+		return
+	}
+	if rs := database.DB.Where("id = (?,?)", idShop, idDorayaki).FirstOrCreate(&stok); rs.Error != nil {
+		render.Render(w, r, models.ErrorRenderer(rs.Error))
+		return
+	}
+	if stok.Stok-addStock.AddStok < 0 {
+		render.Render(w, r, models.ErrorRenderer(fmt.Errorf("stok tidak mencukupi")))
+		return
+	}
+	stok.Stok += addStock.AddStok
+	if rs := database.DB.Save(&stok); rs.Error != nil {
+		render.Render(w, r, models.ErrorRenderer(rs.Error))
+		return
+	}
+	resp := models.ResponseStok{Response: *models.SuccessResponse}
+	resp.Data = append(resp.Data, stok)
+	if err := render.Render(w, r, &resp); err != nil {
+		render.Render(w, r, models.ServerErrorRenderer(err))
 		return
 	}
 }

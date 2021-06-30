@@ -26,6 +26,11 @@ type ResponseToko struct {
 	Data []Toko `json:"data"`
 }
 
+type ResponseStok struct {
+	Response
+	Data []TokoDorayaki
+}
+
 func (re *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	render.Status(r, re.StatusCode)
 	return nil
