@@ -21,6 +21,14 @@ func (TokoDorayaki) TableName() string {
 	return "toko_dorayaki"
 }
 
+type StokDorayaki struct {
+	DorayakiID        int64  `json:"dorayaki_id"`
+	DorayakiRasa      string `json:"dorayaki_rasa"`
+	DorayakiDeskripsi string `json:"dorayaki_deskripsi"`
+	DorayakiImageURL  string `json:"dorayaki_image_url"`
+	Stok              int64  `json:"stok"`
+}
+
 type InputStok struct {
 	AddStok int64 `json:"add_stok"`
 }

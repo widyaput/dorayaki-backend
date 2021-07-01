@@ -17,7 +17,7 @@ services:
       - mariadb
     restart: unless-stopped
   mariadb:
-    container_name: mariadb-prod
+    container_name: mariadb-dorayaki-prod
     build: ../../builds/database-prod
     env_file: ../../builds/database-prod/.env
     ports:

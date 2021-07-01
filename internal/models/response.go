@@ -31,6 +31,11 @@ type ResponseStok struct {
 	Data []TokoDorayaki
 }
 
+type ResponseImageURL struct {
+	Response
+	Data []string
+}
+
 func (re *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	render.Status(r, re.StatusCode)
 	return nil

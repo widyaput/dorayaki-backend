@@ -15,7 +15,9 @@ func NewHandler() http.Handler {
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins: configs.AllowedOrigins,
 	}))
-	router.Route("/assets", assets)
+
+	fs := http.FileServer(http.Dir(uploadPath))
+	router.Handle("/files/*", http.StripPrefix("/files/", fs))
 	router.Route("/api/v1/", apiv1)
 	router.MethodNotAllowed(methodNotAllowedHandler)
 	router.NotFound(notFoundHandler)
@@ -24,11 +26,9 @@ func NewHandler() http.Handler {
 
 func methodNotAllowedHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
-	// w.WriteHeader(405)
 	render.Render(w, r, models.ErrMethodNotAllowed)
 }
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
-	// w.WriteHeader(400)
 	render.Render(w, r, models.ErrNotFound)
 }
