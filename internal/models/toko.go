@@ -15,8 +15,8 @@ type Toko struct {
 	Provinsi  string         `gorm:"not null" json:"provinsi"`
 	Dorayaki  []Dorayaki     `gorm:"many2many:toko_dorayaki;constraint:OnDelete:CASCADE" json:"dorayaki"`
 	Stok      []TokoDorayaki `json:"stok"`
-	CreatedAt int64          `gorm:"autoCreateTime"`
-	UpdatedAt int64          `gorm:"autoUpdateTime"`
+	CreatedAt int64          `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt int64          `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 // TableName returns table's name inside database.

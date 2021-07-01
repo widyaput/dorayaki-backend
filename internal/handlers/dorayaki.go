@@ -21,10 +21,6 @@ import (
 
 type key int64
 
-const (
-	keyDorayaki key = iota
-)
-
 const maxUploadSize = 2 * 1024 * 1024
 const uploadPath = "internal/assets/"
 

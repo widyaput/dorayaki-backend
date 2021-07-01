@@ -15,6 +15,7 @@ import (
 const (
 	keyShop       key = iota
 	keyShopTarget key = iota
+	keyDorayaki   key = iota
 )
 
 func shops(router chi.Router) {
@@ -140,8 +141,13 @@ func getStok(w http.ResponseWriter, r *http.Request) {
 	idShop := r.Context().Value(keyShop).(int)
 	idDorayaki := r.Context().Value(keyDorayaki).(int)
 	var stok models.TokoDorayaki
-	if rs := database.DB.Where("id = (?,?)", idShop, idDorayaki).
-		FirstOrCreate(&stok); rs.Error != nil {
+	if rs := database.DB.
+		FirstOrCreate(&stok,
+			models.TokoDorayaki{
+				TokoID:     int64(idShop),
+				DorayakiID: int64(idDorayaki),
+			}); rs.Error != nil {
+
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return
 	}
@@ -164,8 +170,13 @@ func addStok(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, models.ErrorRenderer(err))
 		return
 	}
-	if rs := database.DB.Where("id = (?,?)", idShop, idDorayaki).
-		FirstOrCreate(&stok); rs.Error != nil {
+	if rs := database.DB.
+		FirstOrCreate(&stok,
+			models.TokoDorayaki{
+				TokoID:     int64(idShop),
+				DorayakiID: int64(idDorayaki),
+			}); rs.Error != nil {
+
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return
 	}
@@ -198,8 +209,12 @@ func transferStok(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, models.ErrorRenderer(err))
 		return
 	}
-	if rs := database.DB.Where("id = (?,?)", idSource, stock.IdDorayaki).
-		First(&source); rs.Error != nil {
+	if rs := database.DB.
+		First(&source,
+			models.TokoDorayaki{
+				TokoID:     int64(idSource),
+				DorayakiID: int64(stock.IdDorayaki),
+			}); rs.Error != nil {
 		render.Render(w, r, models.ErrNotFound)
 		return
 	}
@@ -207,14 +222,27 @@ func transferStok(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, models.ErrorRenderer(fmt.Errorf("stock tidak mencukupi")))
 		return
 	}
-	if rs := database.DB.Where("id = (?,?)", idTarget, stock.IdDorayaki).
-		FirstOrCreate(&target); rs.Error != nil {
+	if rs := database.DB.
+		FirstOrCreate(&target,
+			models.TokoDorayaki{
+				TokoID:     int64(idTarget),
+				DorayakiID: int64(stock.IdDorayaki),
+			}); rs.Error != nil {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return
 	}
 	target.Stok += stock.Stock
+	source.Stok -= stock.Stock
 	if rs := database.DB.Save(&target); rs.Error != nil {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
+		return
+	}
+	if rs := database.DB.Save(&source); rs.Error != nil {
+		render.Render(w, r, models.ErrorRenderer(rs.Error))
+		return
+	}
+	if err := render.Render(w, r, models.SuccessResponse); err != nil {
+		render.Render(w, r, models.ServerErrorRenderer(err))
 		return
 	}
 }

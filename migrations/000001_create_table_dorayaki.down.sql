@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS `dorayaki`;
+DROP TABLE `dorayaki`;

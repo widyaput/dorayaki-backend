@@ -9,11 +9,11 @@ import (
 // TokoDorayaki represents Dorayaki shop in database.
 
 type TokoDorayaki struct {
-	TokoID     int64 `gorm:"primaryKey;ForeignKey:id;References:id;constraint:OnDelete:CASCADE"`
-	DorayakiID int64 `gorm:"primaryKey;ForeignKey:id;References:id;constraint:OnDelete:CASCADE"`
-	Stok       int64 `gorm:"default:0;check:stok>=0"`
-	CreatedAt  int64 `gorm:"autoCreateTime"`
-	UpdatedAt  int64 `gorm:"autoUpdateTime"`
+	TokoID     int64 `gorm:"primaryKey;ForeignKey:id;References:id;constraint:OnDelete:CASCADE" json:"toko_id"`
+	DorayakiID int64 `gorm:"primaryKey;ForeignKey:id;References:id;constraint:OnDelete:CASCADE" json:"dorayaki_id"`
+	Stok       int64 `gorm:"default:0;check:stok>=0" json:"stok"`
+	CreatedAt  int64 `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt  int64 `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 // TableName returns table's name inside database.
@@ -48,9 +48,12 @@ func (t *InputTransfer) Bind(r *http.Request) error {
 	return nil
 }
 
+// Reject addstock = 0
 func (s *InputStok) Bind(r *http.Request) error {
 	if reflect.TypeOf(s.AddStok).Kind().String() != "int" &&
-		reflect.TypeOf(s.AddStok).Kind().String() != "int64" && reflect.TypeOf(s.AddStok).Kind().String() != "int32" {
+		reflect.TypeOf(s.AddStok).Kind().String() != "int64" &&
+		reflect.TypeOf(s.AddStok).Kind().String() != "int32" &&
+		s.AddStok == 0 {
 		return fmt.Errorf("invalid added stock")
 	}
 	return nil

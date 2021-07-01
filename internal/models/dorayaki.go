@@ -11,8 +11,8 @@ type Dorayaki struct {
 	Rasa      string `gorm:"not null" json:"rasa"`
 	Deskripsi string `gorm:"not null" json:"deskripsi"`
 	ImageURL  string `json:"image_url"`
-	CreatedAt int64  `gorm:"autoCreateTime"`
-	UpdatedAt int64  `gorm:"autoUpdateTime"`
+	CreatedAt int64  `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt int64  `gorm:"autoUpdateTime" json:"updated_at"`
 }
 
 // TableName returns table's name inside database.
@@ -20,6 +20,7 @@ func (Dorayaki) TableName() string {
 	return "dorayaki"
 }
 
+// Bind dorayaki's input from request body.
 func (d *Dorayaki) Bind(r *http.Request) error {
 	if d.Rasa == "" {
 		return fmt.Errorf("rasa is required")

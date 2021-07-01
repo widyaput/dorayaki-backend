@@ -1,4 +1,4 @@
-CREATE TABLE IF EXISTS `toko_dorayaki` (
+CREATE TABLE IF NOT EXISTS `toko_dorayaki` (
   `toko_id` bigint(20) NOT NULL,
   `dorayaki_id` bigint(20) NOT NULL,
   `stok` bigint(20) DEFAULT 0,
