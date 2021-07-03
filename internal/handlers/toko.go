@@ -27,6 +27,7 @@ func shops(router chi.Router) {
 		router.Get("/", getShop)
 		router.Put("/", updateShop)
 		router.Delete("/", deleteShop)
+		router.Get("/search", paginateShop)
 		router.Route("/{dorayakiId}", func(router chi.Router) {
 			router.Use(DorayakiContext)
 			router.Get("/", getStok)
@@ -245,6 +246,10 @@ func transferStok(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, models.ServerErrorRenderer(err))
 		return
 	}
+}
+
+func paginateShop(w http.ResponseWriter, r *http.Request) {
+
 }
 
 func ShopContext(next http.Handler) http.Handler {

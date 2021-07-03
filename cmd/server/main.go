@@ -12,6 +12,8 @@ import (
 
 const defaultPort = "8080"
 
+var SecretKey string
+
 // POST /api/v1/orders
 
 func main() {
@@ -26,13 +28,13 @@ func main() {
 	database.DB.Migrator().CreateConstraint(&models.TokoDorayaki{}, "TokoID")
 	database.DB.Migrator().CreateConstraint(&models.TokoDorayaki{}, "DorayakiID")
 
+	models.InitialiseKey()
 	r := handlers.NewHandler()
 	server := &http.Server{
 		Handler: r,
 	}
 
 	port := os.Getenv("PORT")
-
 	if port == "" {
 		port = defaultPort
 	}

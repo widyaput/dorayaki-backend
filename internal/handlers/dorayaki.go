@@ -39,6 +39,14 @@ func dorayakis(router chi.Router) {
 }
 
 func createDorayaki(w http.ResponseWriter, r *http.Request) {
+	// if err := Auth(w, r); err != nil {
+	// 	if err == http.ErrNoCookie || err == jwt.ErrSignatureInvalid || err.Error() == "unauthorized" {
+	// 		render.Render(w, r, models.ErrUnauthorized)
+	// 		return
+	// 	}
+	// 	render.Render(w, r, models.ErrBadRequest)
+	// 	return
+	// }
 	var dorayaki models.Dorayaki
 	if err := render.Bind(r, &dorayaki); err != nil {
 		render.Render(w, r, models.ErrBadRequest)
@@ -58,6 +66,14 @@ func createDorayaki(w http.ResponseWriter, r *http.Request) {
 
 }
 func updateDorayaki(w http.ResponseWriter, r *http.Request) {
+	// if err := Auth(w, r); err != nil {
+	// 	if err == http.ErrNoCookie || err == jwt.ErrSignatureInvalid || err.Error() == "unauthorized" {
+	// 		render.Render(w, r, models.ErrUnauthorized)
+	// 		return
+	// 	}
+	// 	render.Render(w, r, models.ErrBadRequest)
+	// 	return
+	// }
 	id := r.Context().Value(keyDorayaki).(int)
 	var newDorayaki models.Dorayaki
 	var oldDorayaki models.Dorayaki
@@ -84,6 +100,14 @@ func updateDorayaki(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func deleteDorayaki(w http.ResponseWriter, r *http.Request) {
+	// if err := Auth(w, r); err != nil {
+	// 	if err == http.ErrNoCookie || err == jwt.ErrSignatureInvalid || err.Error() == "unauthorized" {
+	// 		render.Render(w, r, models.ErrUnauthorized)
+	// 		return
+	// 	}
+	// 	render.Render(w, r, models.ErrBadRequest)
+	// 	return
+	// }
 	id := r.Context().Value(keyDorayaki).(int)
 	var oldDorayaki models.Dorayaki
 	if rs := database.DB.Where("ID = ?", id).First(&oldDorayaki); rs.Error != nil {
@@ -101,6 +125,14 @@ func deleteDorayaki(w http.ResponseWriter, r *http.Request) {
 	// }
 }
 func getDorayaki(w http.ResponseWriter, r *http.Request) {
+	// if err := Auth(w, r); err != nil {
+	// 	if err == http.ErrNoCookie || err == jwt.ErrSignatureInvalid || err.Error() == "unauthorized" {
+	// 		render.Render(w, r, models.ErrUnauthorized)
+	// 		return
+	// 	}
+	// 	render.Render(w, r, models.ErrBadRequest)
+	// 	return
+	// }
 	var dorayaki models.Dorayaki
 	id := r.Context().Value(keyDorayaki).(int)
 	if rs := database.DB.Where("ID = ?", id).First(&dorayaki); rs.Error != nil {
@@ -115,6 +147,14 @@ func getDorayaki(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func getAllDorayaki(w http.ResponseWriter, r *http.Request) {
+	// if err := Auth(w, r); err != nil {
+	// 	if err == http.ErrNoCookie || err == jwt.ErrSignatureInvalid || err.Error() == "unauthorized" {
+	// 		render.Render(w, r, models.ErrUnauthorized)
+	// 		return
+	// 	}
+	// 	render.Render(w, r, models.ErrBadRequest)
+	// 	return
+	// }
 	var list []models.Dorayaki
 	if rs := database.DB.Find(&list); rs.Error != nil {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
@@ -135,6 +175,14 @@ func randToken(len int) string {
 }
 
 func uploadImage(w http.ResponseWriter, r *http.Request) {
+	// if err := Auth(w, r); err != nil {
+	// 	if err == http.ErrNoCookie || err == jwt.ErrSignatureInvalid || err.Error() == "unauthorized" {
+	// 		render.Render(w, r, models.ErrUnauthorized)
+	// 		return
+	// 	}
+	// 	render.Render(w, r, models.ErrBadRequest)
+	// 	return
+	// }
 	if err := r.ParseMultipartForm(maxUploadSize); err != nil {
 		render.Render(w, r, models.ErrorRenderer(err))
 		return
@@ -165,7 +213,7 @@ func uploadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	newFileName := randToken(12)
-	newFileName = fmt.Sprintf("%d", time.Now()) + newFileName
+	newFileName = fmt.Sprintf("%d", time.Now().Unix()) + newFileName
 	fileEndings, err := mime.ExtensionsByType(detectedFileType)
 	if err != nil {
 		render.Render(w, r, models.ErrorRenderer(errors.New("cant read file type")))
