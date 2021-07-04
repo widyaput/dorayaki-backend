@@ -24,12 +24,9 @@ func NewHandler() http.Handler {
 	}))
 	router.Use(middleware.Logger)
 	router.Post("/signin", signin)
-	router.Group(func(router chi.Router) {
-		router.Use(Authenticator)
-		fs := http.FileServer(http.Dir(uploadPath))
-		router.Handle("/files/*", http.StripPrefix("/files/", fs))
-		router.Route("/api/v1/", apiv1)
-	})
+	fs := http.FileServer(http.Dir(uploadPath))
+	router.Handle("/files/*", http.StripPrefix("/files/", fs))
+	router.Route("/api/v1/", apiv1)
 	router.MethodNotAllowed(methodNotAllowedHandler)
 	router.NotFound(notFoundHandler)
 	return router

@@ -4,10 +4,12 @@ import (
 	"context"
 	"crypto/rand"
 	"dorayaki/configs/database"
+	"dorayaki/internal/helpers"
 	"dorayaki/internal/models"
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"mime"
 	"net/http"
 	"os"
@@ -25,28 +27,27 @@ const maxUploadSize = 2 * 1024 * 1024
 const uploadPath = "internal/assets/"
 
 func dorayakis(router chi.Router) {
-	router.Get("/", getAllDorayaki)
-	router.Post("/", createDorayaki)
-	// TODO: Pagination with query rasa.
-	// TODO: Change routing to upload images here.
-	router.Route("/{dorayakiId}", func(router chi.Router) {
-		router.Use(DorayakiContext)
-		router.Get("/", getDorayaki)
-		router.Put("/", updateDorayaki)
-		router.Delete("/", deleteDorayaki)
-		router.Post("/upload", uploadImage)
+	router.Group(func(router chi.Router) {
+		router.Get("/", getAllDorayaki)
+		router.Get("/search", paginateDorayaki)
+		router.Group(func(router chi.Router) {
+			router.Use(Authenticator)
+			router.Post("/", createDorayaki)
+		})
+		router.Route("/{dorayakiId}", func(router chi.Router) {
+			router.Use(DorayakiContext)
+			router.Get("/", getDorayaki)
+			router.Group(func(router chi.Router) {
+				router.Use(Authenticator)
+				router.Put("/", updateDorayaki)
+				router.Delete("/", deleteDorayaki)
+				router.Post("/upload", uploadImage)
+			})
+		})
 	})
 }
 
 func createDorayaki(w http.ResponseWriter, r *http.Request) {
-	// if err := Auth(w, r); err != nil {
-	// 	if err == http.ErrNoCookie || err == jwt.ErrSignatureInvalid || err.Error() == "unauthorized" {
-	// 		render.Render(w, r, models.ErrUnauthorized)
-	// 		return
-	// 	}
-	// 	render.Render(w, r, models.ErrBadRequest)
-	// 	return
-	// }
 	var dorayaki models.Dorayaki
 	if err := render.Bind(r, &dorayaki); err != nil {
 		render.Render(w, r, models.ErrBadRequest)
@@ -66,14 +67,6 @@ func createDorayaki(w http.ResponseWriter, r *http.Request) {
 
 }
 func updateDorayaki(w http.ResponseWriter, r *http.Request) {
-	// if err := Auth(w, r); err != nil {
-	// 	if err == http.ErrNoCookie || err == jwt.ErrSignatureInvalid || err.Error() == "unauthorized" {
-	// 		render.Render(w, r, models.ErrUnauthorized)
-	// 		return
-	// 	}
-	// 	render.Render(w, r, models.ErrBadRequest)
-	// 	return
-	// }
 	id := r.Context().Value(keyDorayaki).(int)
 	var newDorayaki models.Dorayaki
 	var oldDorayaki models.Dorayaki
@@ -100,14 +93,6 @@ func updateDorayaki(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func deleteDorayaki(w http.ResponseWriter, r *http.Request) {
-	// if err := Auth(w, r); err != nil {
-	// 	if err == http.ErrNoCookie || err == jwt.ErrSignatureInvalid || err.Error() == "unauthorized" {
-	// 		render.Render(w, r, models.ErrUnauthorized)
-	// 		return
-	// 	}
-	// 	render.Render(w, r, models.ErrBadRequest)
-	// 	return
-	// }
 	id := r.Context().Value(keyDorayaki).(int)
 	var oldDorayaki models.Dorayaki
 	if rs := database.DB.Where("ID = ?", id).First(&oldDorayaki); rs.Error != nil {
@@ -118,21 +103,8 @@ func deleteDorayaki(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return
 	}
-	// resp := *models.SuccessDeleteResponse
-	// if err := render.Render(w, r, &resp); err != nil {
-	// 	render.Render(w, r, models.ServerErrorRenderer(err))
-	// 	return
-	// }
 }
 func getDorayaki(w http.ResponseWriter, r *http.Request) {
-	// if err := Auth(w, r); err != nil {
-	// 	if err == http.ErrNoCookie || err == jwt.ErrSignatureInvalid || err.Error() == "unauthorized" {
-	// 		render.Render(w, r, models.ErrUnauthorized)
-	// 		return
-	// 	}
-	// 	render.Render(w, r, models.ErrBadRequest)
-	// 	return
-	// }
 	var dorayaki models.Dorayaki
 	id := r.Context().Value(keyDorayaki).(int)
 	if rs := database.DB.Where("ID = ?", id).First(&dorayaki); rs.Error != nil {
@@ -147,14 +119,6 @@ func getDorayaki(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func getAllDorayaki(w http.ResponseWriter, r *http.Request) {
-	// if err := Auth(w, r); err != nil {
-	// 	if err == http.ErrNoCookie || err == jwt.ErrSignatureInvalid || err.Error() == "unauthorized" {
-	// 		render.Render(w, r, models.ErrUnauthorized)
-	// 		return
-	// 	}
-	// 	render.Render(w, r, models.ErrBadRequest)
-	// 	return
-	// }
 	var list []models.Dorayaki
 	if rs := database.DB.Find(&list); rs.Error != nil {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
@@ -175,19 +139,10 @@ func randToken(len int) string {
 }
 
 func uploadImage(w http.ResponseWriter, r *http.Request) {
-	// if err := Auth(w, r); err != nil {
-	// 	if err == http.ErrNoCookie || err == jwt.ErrSignatureInvalid || err.Error() == "unauthorized" {
-	// 		render.Render(w, r, models.ErrUnauthorized)
-	// 		return
-	// 	}
-	// 	render.Render(w, r, models.ErrBadRequest)
-	// 	return
-	// }
 	if err := r.ParseMultipartForm(maxUploadSize); err != nil {
 		render.Render(w, r, models.ErrorRenderer(err))
 		return
 	}
-	// fileType := r.PostFormValue("type")
 	file, fileheader, err := r.FormFile("uploadFile")
 	if err != nil {
 		render.Render(w, r, models.ErrorRenderer(err))
@@ -237,6 +192,57 @@ func uploadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func paginateDorayaki(w http.ResponseWriter, r *http.Request) {
+	rawQuery, rawArgs, err := helpers.PaginateAbstract(models.Dorayaki{}.TableName(), r)
+	if err != nil {
+		render.Render(w, r, models.ServerErrorRenderer(err))
+		return
+	}
+	totalRawQuery, totalRawArgs, err := helpers.TakeQuery(models.Dorayaki{}.TableName(), r).ToSql()
+	if err != nil {
+		render.Render(w, r, models.ServerErrorRenderer(err))
+		return
+	}
+	var data []models.Dorayaki
+	if rs := database.DB.Raw(rawQuery, rawArgs...).Scan(&data); rs.Error != nil {
+		render.Render(w, r, models.ServerErrorRenderer(rs.Error))
+		return
+	}
+	var totalData []models.Dorayaki
+	if rs := database.DB.Raw(totalRawQuery, totalRawArgs...).Scan(&totalData); rs.Error != nil {
+		render.Render(w, r, models.ServerErrorRenderer(rs.Error))
+		return
+	}
+
+	var idxPage int
+	var itemsPerPage int
+	idxPage, err = strconv.Atoi(r.URL.Query().Get("pageIndex"))
+	if err != nil {
+		idxPage = 1
+	}
+	itemsPerPage, err = strconv.Atoi(r.URL.Query().Get("itemsPerPage"))
+	if err != nil {
+		itemsPerPage = 10
+	}
+	respPaginate := models.ResponsePaginate{
+		Response:     *models.SuccessResponse,
+		ItemsPerPage: int64(itemsPerPage),
+		TotalItems:   int64(len(totalData)),
+		PageIndex:    int64(idxPage),
+		TotalPages:   int64(math.Ceil(float64(len(totalData)) / float64(itemsPerPage))),
+	}
+	resp := models.ResponsePaginateDorayaki{
+		ResponsePaginate: respPaginate,
+		Rasa:             r.URL.Query().Get("rasa"),
+		Data:             data,
+	}
+	if err = render.Render(w, r, &resp); err != nil {
+		render.Render(w, r, models.ServerErrorRenderer(err))
+		return
+	}
+}
+
 func DorayakiContext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		dorayakiId := chi.URLParam(r, "dorayakiId")

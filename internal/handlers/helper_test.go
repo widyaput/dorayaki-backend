@@ -8,7 +8,7 @@ import (
 
 func TestPaginateAbstract(t *testing.T) {
 	// assert := assert.New(t)
-	r, err := http.NewRequest("POST", "localhost:8080/search?dorayaki=coklat", nil)
+	r, err := http.NewRequest("POST", "search?dorayaki=coklat", nil)
 	if err != nil {
 		t.Errorf(err.Error())
 		return

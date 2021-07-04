@@ -3,8 +3,10 @@ package handlers
 import (
 	"context"
 	"dorayaki/configs/database"
+	"dorayaki/internal/helpers"
 	"dorayaki/internal/models"
 	"fmt"
+	"math"
 	"net/http"
 	"strconv"
 
@@ -19,23 +21,34 @@ const (
 )
 
 func shops(router chi.Router) {
-	router.Get("/", getAllShop)
-	router.Post("/", createShop)
-	// TODO: Pagination with query on kecamatan or provinsi.
-	router.Route("/{shopId}", func(router chi.Router) {
-		router.Use(ShopContext)
-		router.Get("/", getShop)
-		router.Put("/", updateShop)
-		router.Delete("/", deleteShop)
-		router.Get("/search", paginateShop)
-		router.Route("/{dorayakiId}", func(router chi.Router) {
-			router.Use(DorayakiContext)
-			router.Get("/", getStok)
-			router.Post("/", addStok)
+	router.Group(func(router chi.Router) {
+		router.Get("/", getAllShop)
+		router.Group(func(router chi.Router) {
+			router.Use(Authenticator)
+			router.Post("/", createShop)
 		})
-		router.Route("/transfer/{targetShopId}", func(router chi.Router) {
-			router.Use(TargetShopContext)
-			router.Post("/", transferStok)
+		router.Route("/{shopId}", func(router chi.Router) {
+			router.Use(ShopContext)
+			router.Get("/", getShop)
+			router.Get("/search", paginateShop)
+			router.Group(func(router chi.Router) {
+				router.Use(Authenticator)
+				router.Put("/", updateShop)
+				router.Delete("/", deleteShop)
+			})
+			router.Route("/{dorayakiId}", func(router chi.Router) {
+				router.Use(DorayakiContext)
+				router.Get("/", getStok)
+				router.Group(func(router chi.Router) {
+					router.Use(Authenticator)
+					router.Post("/", addStok)
+				})
+			})
+			router.Route("/transfer/{targetShopId}", func(router chi.Router) {
+				router.Use(TargetShopContext)
+				router.Use(Authenticator)
+				router.Post("/", transferStok)
+			})
 		})
 	})
 }
@@ -249,7 +262,53 @@ func transferStok(w http.ResponseWriter, r *http.Request) {
 }
 
 func paginateShop(w http.ResponseWriter, r *http.Request) {
-
+	rawQuery, rawArgs, err := helpers.PaginateAbstract(models.Toko{}.TableName(), r)
+	if err != nil {
+		render.Render(w, r, models.ServerErrorRenderer(err))
+		return
+	}
+	totalRawQuery, totalRawArgs, err := helpers.TakeQuery(models.Toko{}.TableName(), r).ToSql()
+	if err != nil {
+		render.Render(w, r, models.ServerErrorRenderer(err))
+		return
+	}
+	var data []models.Toko
+	if rs := database.DB.Raw(rawQuery, rawArgs...).Scan(&data); rs.Error != nil {
+		render.Render(w, r, models.ServerErrorRenderer(rs.Error))
+		return
+	}
+	var totalData []models.Toko
+	if rs := database.DB.Raw(totalRawQuery, totalRawArgs...).Scan(&totalData); rs.Error != nil {
+		render.Render(w, r, models.ServerErrorRenderer(rs.Error))
+		return
+	}
+	var idxPage int
+	var itemsPerPage int
+	idxPage, err = strconv.Atoi(r.URL.Query().Get("pageIndex"))
+	if err != nil {
+		idxPage = 1
+	}
+	itemsPerPage, err = strconv.Atoi(r.URL.Query().Get("itemsPerPage"))
+	if err != nil {
+		itemsPerPage = 10
+	}
+	respPaginate := models.ResponsePaginate{
+		Response:     *models.SuccessResponse,
+		ItemsPerPage: int64(itemsPerPage),
+		TotalItems:   int64(len(totalData)),
+		PageIndex:    int64(idxPage),
+		TotalPages:   int64(math.Ceil(float64(len(totalData)) / float64(itemsPerPage))),
+	}
+	resp := models.ResponsePaginateToko{
+		ResponsePaginate: respPaginate,
+		Kecamatan:        r.URL.Query().Get("kecamatan"),
+		Provinsi:         r.URL.Query().Get("provinsi"),
+		Data:             data,
+	}
+	if err = render.Render(w, r, &resp); err != nil {
+		render.Render(w, r, models.ServerErrorRenderer(err))
+		return
+	}
 }
 
 func ShopContext(next http.Handler) http.Handler {

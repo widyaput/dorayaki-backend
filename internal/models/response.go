@@ -36,6 +36,28 @@ type ResponseImageURL struct {
 	Data []string
 }
 
+type ResponsePaginate struct {
+	Response
+	ItemsPerPage int64  `json:"items_per_page"`
+	TotalItems   int64  `json:"total_items"`
+	PageIndex    int64  `json:"page_index"`
+	TotalPages   int64  `json:"total_pages"`
+	Sort         string `json:"sort"`
+}
+
+type ResponsePaginateToko struct {
+	ResponsePaginate
+	Kecamatan string `json:"kecamatan"`
+	Provinsi  string `json:"provinsi"`
+	Data      []Toko `json:"data"`
+}
+
+type ResponsePaginateDorayaki struct {
+	ResponsePaginate
+	Rasa string     `json:"rasa"`
+	Data []Dorayaki `json:"data"`
+}
+
 func (re *Response) Render(w http.ResponseWriter, r *http.Request) error {
 	render.Status(r, re.StatusCode)
 	return nil
