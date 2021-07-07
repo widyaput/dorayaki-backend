@@ -1,0 +1,446 @@
+swagger: '2.0'
+info:
+  description: 'This is documentation to use lph backend API'
+  version: '1.0.0'
+  title: 'Swagger lph-backend'
+  termsOfService: 'http://swagger.io/terms/'
+  contact:
+    email: 'apiteam@swagger.io'
+  license:
+    name: 'Apache 2.0'
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+host: 'localhost:5000'
+basePath: '/api/v1'
+schemes:
+  - 'http'
+  - 'https'
+paths:
+  /users:
+    get:
+      tags:
+        - 'List User'
+      summary: 'Returns all user list from database'
+      description: 'Returns a map of status codes to quantities'
+      operationId: 'getUsers'
+      produces:
+        - 'application/json'
+      parameters: []
+      responses:
+        '200':
+          description: 'successful operation'
+          schema:
+            $ref: '#/definitions/User'
+      security:
+        - api_key: []
+  /users/userPagination:
+    get:
+      tags:
+        - 'List User'
+      summary: 'Returns all user paginated list from database requested by client'
+      description: 'Returns a map of status codes to quantities'
+      operationId: 'getPaginationUser'
+      produces:
+        - 'application/json'
+      parameters:
+        - name: 'query'
+          in: 'query'
+          description: 'The query for filtering name'
+          required: false
+          type: 'string'
+        - name: 'sort'
+          in: 'query'
+          description: 'The query for ordering id by client input'
+          required: false
+          type: 'string'
+        - name: 'pageIndex'
+          in: 'query'
+          description: 'The query for query index of the page'
+          required: false
+          type: 'string'
+        - name: 'itemsPerPage'
+          in: 'query'
+          description: 'The query for query number of item every page'
+          required: false
+          type: 'string'
+      responses:
+        '200':
+          description: 'successful operation'
+          schema:
+            $ref: '#/definitions/UserPagination'
+        '400':
+          description: 'invalid column name'
+        '500':
+          description: 'Could not handle pagination'
+      security:
+        - api_key: []
+  /users/{userId}:
+    get:
+      tags:
+        - 'List User'
+      summary: 'Return user with specified userId'
+      description: 'For valid response input userId as numeric value, other values will generated exceptions'
+      produces:
+        - 'application/json'
+      parameters:
+        - name: 'userId'
+          in: 'path'
+          description: 'ID of user that needs to be fetched'
+          required: true
+          type: 'integer'
+          format: 'int64'
+      responses:
+        '200':
+          description: 'successful operation'
+          schema:
+            $ref: '#/definitions/User'
+        '400':
+          description: 'Invalid response url'
+        '404':
+          description: 'User not found, userId not valid'
+        '500':
+          description: 'Bad Request'
+  /api/v1/orders/{orderId}:
+    get:
+      tags:
+        - "ORDER"
+      summary: 'Get order by id from database'
+      produces:
+        - 'application/json'
+      parameters:
+        - name: 'orderId'
+          in: path
+          description: 'ID of order'
+          required: true
+          type: 'integer'
+      responses:
+        '200':
+          description: 'Get order success'
+          schema:
+            $ref: '#/definitions/ResponseOrder'
+        '400':
+          description: 'Invalid params ID'
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: 'Record not found'
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: 'Internal server error'
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      tags:
+        - "ORDER"
+      summary: 'Update order by id from database using request body'
+      consumes:
+        - 'application/json'
+      produces:
+        - 'application/json'
+      parameters:
+        - name: 'orderId'
+          in: path
+          description: 'ID of order'
+          required: true
+          type: integer
+        - in: body
+          name: body
+          description: 'Input order that want to be updated'
+          required: true
+          schema:
+            $ref: '#/definitions/InputOrder'
+      responses:
+        '200':
+          description: 'Update order in database success'
+          schema:
+            $ref: '#/definitions/ResponseOrder'
+        '400':
+          description: 'Invalid params id or invalid request body'
+          schema:
+            $ref: '#/definitions/Error'
+        '404':
+          description: 'Record not found'
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: 'Internal server error'
+          schema:
+            $ref: '#/definitions/Error'
+  /api/v1/orders:
+    post:
+      tags:
+        - "ORDER"
+      summary: 'Create new order and send transaction signal to payment gateway'
+      description: ''
+      consumes:
+        - 'application/json'
+      produces:
+        - 'application/json'
+      parameters:
+        - in: 'body'
+          name: 'body'
+          description: 'New order that want to be added to database'
+          required: true
+          schema:
+            $ref: '#/definitions/InputOrder'
+      responses:
+        '201':
+          description: 'Create transaction for order success'
+          schema:
+            $ref: '#/definitions/ResponseCreateOrder'
+        '400':
+          description: 'Failed during input validation'
+          schema:
+            $ref: '#/definitions/Error'
+        '502':
+          description: 'Failed to create transaction with payment gateway. Order already saved to database'
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: 'Internal server error'
+          schema:
+            $ref: '#/definitions/Error'
+  /api/v1/orders/search:
+    get:
+      tags:
+          - "ORDER"
+      summary: 'Get order pagination'
+      description: ''
+      produces:
+        - 'application/json'
+      parameters:
+        - name: 'query'
+          in: 'query'
+          description: 'The query for filtering product name'
+          required: false
+          type: 'string'
+        - name: 'sort'
+          in: 'query'
+          description: 'The query for ordering id by client input'
+          required: false
+          type: 'string'
+        - name: 'pageIndex'
+          in: 'query'
+          description: 'The query for query index of the page'
+          required: false
+          type: 'string'
+        - name: 'itemsPerPage'
+          in: 'query'
+          description: 'The query for query number of item every page'
+          required: false
+          type: 'string'
+      responses:
+        '200':
+          description: 'GetPagination success'
+          schema:
+            $ref: '#/definitions/OrderPagination'
+        '400':
+          description: 'invalid column name in order'
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: 'internal server error'
+          schema:
+            $ref: '#/definitions/Error'
+  
+securityDefinitions:
+  petstore_auth:
+    type: 'oauth2'
+    authorizationUrl: 'http://petstore.swagger.io/oauth/dialog'
+    flow: 'implicit'
+    scopes:
+      write:pets: 'modify pets in your account'
+      read:pets: 'read your pets'
+  api_key:
+    type: 'apiKey'
+    name: 'api_key'
+    in: 'header'
+definitions:
+  User:
+    type: 'object'
+    required:
+      - 'firstName'
+      - 'lastName'
+      - 'picture'
+      - 'email'
+      - 'role'
+    properties:
+      firstName:
+        type: 'string'
+      lastName:
+        type: 'string'
+      picture:
+        type: 'string'
+      email:
+        type: 'string'
+      role:
+        type: 'string'
+        description: 'User Status'
+  ApiResponse:
+    type: 'object'
+    properties:
+      code:
+        type: 'integer'
+        format: 'int32'
+      type:
+        type: 'string'
+      message:
+        type: 'string'
+  UserPagination:
+    type: 'object'
+    properties:
+      currentItemCount:
+        type: 'integer'
+        format: 'int64'
+      query:
+        type: 'string'
+      itemsPerPage:
+        type: 'string'
+      totalItems:
+        type: 'string'
+      pageIndex:
+        type: 'string'
+      totalPages:
+        type: 'string'
+      sort:
+        type: 'string'
+      items:
+        type: 'array'
+        items:
+          $ref: '#/definitions/User'
+  OrderPagination:
+    type: 'object'
+    properties:
+      apiVersion:
+        type: 'string'
+        description: 'Current api version of this method'
+      data:
+        type: 'object'
+        properties:
+          currentItemCount:
+            type: 'integer'
+            description: 'Length of results after applying all url queries'
+          query:
+            type: 'string'
+            description: 'Query to find productName'
+          itemsPerPage:
+            type: 'integer'
+            description: 'Desired count of items in one page'
+          totalItems:
+            type: 'integer'
+            description: 'Total items after searching using query (limit and offset not applied yet)'
+          pageIndex:
+            type: 'integer'
+            description: 'Index of this page'
+          totalPages:
+            type: 'integer'
+            description: 'Total pages for all results after applying all url queries'
+          sort:
+            type: 'string'
+            description: 'How data sorted'
+          items:
+            type: array
+            items:
+              $ref: '#/definitions/Order'
+  InputOrder:
+    type: 'object'
+    properties:
+      productName:
+        type: 'string'
+        description: 'Name of product'
+      quantity:
+        type: 'string'
+        description: 'Quantity of product'
+      nama:
+        type: 'string'
+        description: 'Name of buyer'
+      nomorHp:
+        type: 'string'
+        description: 'Phone number of buyer'
+      email:
+        type: 'string'
+        description: 'Email of buyer'
+  Order:
+    type: 'object'
+    properties:
+      id:
+        type: 'integer'
+      productName:
+        type: 'string'
+        description: 'Name of product'
+      quantity:
+        type: 'string'
+        description: 'Quantity of product'
+      nama:
+        type: 'string'
+        description: 'Name of buyer'
+      nomorHp:
+        type: 'string'
+        description: 'Phone number of buyer'
+      email:
+        type: 'string'
+        description: 'Email of buyer'
+      createdAt:
+        type: 'string'
+        format: 'date-time'
+      updatedAt:
+        type: 'string'
+        format: 'date-time'
+  ResponseCreateOrder:
+    type: 'object'
+    properties: 
+      code:
+        type: 'integer'
+        description: 'Status code'
+      message:
+        type: 'string'
+        description: 'Response Message'
+      data:
+        type: 'object'
+        description: 'order and transaction data'
+        properties:
+          resultCode:
+            type: 'string'
+            description: 'Result code from MPS. 00 means success'
+          resultDescription:
+            type: 'string'
+            description: 'Result description from MPS'
+          orderId:
+            type: 'integer'
+            description: 'OrderId in database'
+          invoiceId:
+            type: 'string'
+            description: 'invoiceId from MPS'
+          expiredDate:
+            type: 'string'
+            format: 'date-time'
+            description: 'Expired date of transaction'
+          orderIdMPS:
+            type: 'string'
+            description: 'OrderId to MPS'
+          paymentLink:
+            type: 'string'
+            description: 'Payment link from MPS. Can be undefined if transaction fail.'
+  ResponseOrder:
+    type: 'object'
+    properties: 
+      code:
+        type: 'integer'
+        description: 'Status code'
+      message:
+        type: 'string'
+        description: 'Message'
+      data:
+        $ref: '#/definitions/Order'
+  Error:
+    type: 'object'
+    properties: 
+      code:
+        type: 'integer'
+        description: 'Error code'
+      message:
+        type: 'string'
+        description: 'Error Message'
+externalDocs:
+  description: 'Find out more about Swagger'
+  url: 'http://swagger.io'

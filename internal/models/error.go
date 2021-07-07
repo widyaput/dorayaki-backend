@@ -9,7 +9,7 @@ import (
 type ErrorResponse struct {
 	Err        error  `json:"-"`
 	StatusCode int    `json:"status_code"`
-	StatusText string `json:"status_text"`
+	StatusText string `json:"-"`
 	Message    string `json:"message"`
 }
 

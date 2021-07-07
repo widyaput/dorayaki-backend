@@ -28,12 +28,12 @@ type ResponseToko struct {
 
 type ResponseStok struct {
 	Response
-	Data []TokoDorayaki
+	Data []TokoDorayaki `json:"data"`
 }
 
-type ResponseImageURL struct {
+type ResponseString struct {
 	Response
-	Data []string
+	Data []string `json:"data"`
 }
 
 type ResponsePaginate struct {

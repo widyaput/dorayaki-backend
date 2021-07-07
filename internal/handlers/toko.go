@@ -23,16 +23,16 @@ const (
 func shops(router chi.Router) {
 	router.Group(func(router chi.Router) {
 		router.Get("/", getAllShop)
+		router.Get("/search", paginateShop)
 		router.Group(func(router chi.Router) {
-			router.Use(Authenticator)
+			router.Use(authenticator)
 			router.Post("/", createShop)
 		})
 		router.Route("/{shopId}", func(router chi.Router) {
 			router.Use(ShopContext)
 			router.Get("/", getShop)
-			router.Get("/search", paginateShop)
 			router.Group(func(router chi.Router) {
-				router.Use(Authenticator)
+				router.Use(authenticator)
 				router.Put("/", updateShop)
 				router.Delete("/", deleteShop)
 			})
@@ -40,13 +40,13 @@ func shops(router chi.Router) {
 				router.Use(DorayakiContext)
 				router.Get("/", getStok)
 				router.Group(func(router chi.Router) {
-					router.Use(Authenticator)
+					router.Use(authenticator)
 					router.Post("/", addStok)
 				})
 			})
 			router.Route("/transfer/{targetShopId}", func(router chi.Router) {
 				router.Use(TargetShopContext)
-				router.Use(Authenticator)
+				router.Use(authenticator)
 				router.Post("/", transferStok)
 			})
 		})
@@ -113,7 +113,7 @@ func deleteShop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if rs := database.DB.Delete(&models.Toko{}, id); rs.Error != nil {
-		render.Render(w, r, models.ErrorRenderer(rs.Error))
+		render.Render(w, r, models.ServerErrorRenderer(rs.Error))
 		return
 	}
 }
@@ -274,14 +274,19 @@ func paginateShop(w http.ResponseWriter, r *http.Request) {
 	}
 	var data []models.Toko
 	if rs := database.DB.Raw(rawQuery, rawArgs...).Scan(&data); rs.Error != nil {
-		render.Render(w, r, models.ServerErrorRenderer(rs.Error))
+		render.Render(w, r, models.ErrorRenderer(rs.Error))
+		return
+	}
+	if data == nil {
+		render.Render(w, r, models.ErrNotFound)
 		return
 	}
 	var totalData []models.Toko
 	if rs := database.DB.Raw(totalRawQuery, totalRawArgs...).Scan(&totalData); rs.Error != nil {
-		render.Render(w, r, models.ServerErrorRenderer(rs.Error))
+		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return
 	}
+	sort := r.URL.Query().Get("sort")
 	var idxPage int
 	var itemsPerPage int
 	idxPage, err = strconv.Atoi(r.URL.Query().Get("pageIndex"))
@@ -298,6 +303,7 @@ func paginateShop(w http.ResponseWriter, r *http.Request) {
 		TotalItems:   int64(len(totalData)),
 		PageIndex:    int64(idxPage),
 		TotalPages:   int64(math.Ceil(float64(len(totalData)) / float64(itemsPerPage))),
+		Sort:         sort,
 	}
 	resp := models.ResponsePaginateToko{
 		ResponsePaginate: respPaginate,

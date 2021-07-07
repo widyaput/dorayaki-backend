@@ -7,7 +7,7 @@ import (
 
 // Dorayaki represents dorayaki in database.
 type Dorayaki struct {
-	ID        int64  `gorm:"primaryKey;autoIncrement"`
+	ID        int64  `gorm:"primaryKey;autoIncrement" json:"id"`
 	Rasa      string `gorm:"not null" json:"rasa"`
 	Deskripsi string `gorm:"not null" json:"deskripsi"`
 	ImageURL  string `json:"image_url"`

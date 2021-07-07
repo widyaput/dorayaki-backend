@@ -31,14 +31,14 @@ func dorayakis(router chi.Router) {
 		router.Get("/", getAllDorayaki)
 		router.Get("/search", paginateDorayaki)
 		router.Group(func(router chi.Router) {
-			router.Use(Authenticator)
+			router.Use(authenticator)
 			router.Post("/", createDorayaki)
 		})
 		router.Route("/{dorayakiId}", func(router chi.Router) {
 			router.Use(DorayakiContext)
 			router.Get("/", getDorayaki)
 			router.Group(func(router chi.Router) {
-				router.Use(Authenticator)
+				router.Use(authenticator)
 				router.Put("/", updateDorayaki)
 				router.Delete("/", deleteDorayaki)
 				router.Post("/upload", uploadImage)
@@ -185,7 +185,7 @@ func uploadImage(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, models.ErrorRenderer(errors.New("cant write file")))
 		return
 	}
-	resp := models.ResponseImageURL{Response: *models.SuccessResponse}
+	resp := models.ResponseString{Response: *models.SuccessResponse}
 	resp.Data = append(resp.Data, newPath)
 	if err = render.Render(w, r, &resp); err != nil {
 		render.Render(w, r, models.ServerErrorRenderer(err))

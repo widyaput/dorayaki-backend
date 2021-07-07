@@ -8,7 +8,7 @@ import (
 // Toko represents shop in database.
 
 type Toko struct {
-	ID        int64          `gorm:"primaryKey;autoIncrement"`
+	ID        int64          `gorm:"primaryKey;autoIncrement" json:"id"`
 	Nama      string         `gorm:"not null" json:"nama"`
 	Jalan     string         `gorm:"not null" json:"jalan"`
 	Kecamatan string         `gorm:"not null" json:"kecamatan"`
