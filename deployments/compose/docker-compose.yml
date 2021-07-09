@@ -12,19 +12,19 @@ services:
     ports:
       - 8080:8080
     networks:
-      - dbconnect
+      - dbdorayakiconnect
     depends_on:
-      - mariadb
+      - mariadb-dorayaki
     restart: on-failure
-  mariadb:
+  mariadb-dorayaki:
     container_name: mariadb-dorayaki-dev
     build: ../../builds/database
     env_file: ../../builds/database/.env
     ports:
-      - 3307:3306
+      - 3308:3306
     networks:
-      - dbconnect
+      - dbdorayakiconnect
     restart: on-failure
 networks:
-  dbconnect:
+  dbdorayakiconnect:
     driver: bridge

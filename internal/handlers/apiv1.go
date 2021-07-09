@@ -4,6 +4,7 @@ import (
 	"dorayaki/internal/models"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -11,6 +12,10 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 )
+
+const FilesURI = "/api/v1/files/"
+
+var Host = os.Getenv("HOST")
 
 func apiv1(router chi.Router) {
 	router.Post("/signin", signIn)

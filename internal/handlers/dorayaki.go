@@ -80,7 +80,9 @@ func updateDorayaki(w http.ResponseWriter, r *http.Request) {
 	}
 	oldDorayaki.Deskripsi = newDorayaki.Deskripsi
 	oldDorayaki.Rasa = newDorayaki.Rasa
-	oldDorayaki.ImageURL = newDorayaki.ImageURL
+	if newDorayaki.ImageURL != "" {
+		oldDorayaki.ImageURL = newDorayaki.ImageURL
+	}
 	if rs := database.DB.Save(&oldDorayaki); rs.Error != nil {
 		render.Render(w, r, models.ErrorRenderer((rs.Error)))
 		return
@@ -139,6 +141,12 @@ func randToken(len int) string {
 }
 
 func uploadImage(w http.ResponseWriter, r *http.Request) {
+	var dorayaki models.Dorayaki
+	id := r.Context().Value(keyDorayaki).(int)
+	if rs := database.DB.Where("ID = ?", id).First(&dorayaki); rs.Error != nil {
+		render.Render(w, r, models.ErrNotFound)
+		return
+	}
 	if err := r.ParseMultipartForm(maxUploadSize); err != nil {
 		render.Render(w, r, models.ErrorRenderer(err))
 		return
@@ -177,17 +185,25 @@ func uploadImage(w http.ResponseWriter, r *http.Request) {
 	newPath := filepath.Join(uploadPath, newFileName+fileEndings[0])
 	newFile, err := os.Create(newPath)
 	if err != nil {
-		render.Render(w, r, models.ErrorRenderer(err))
+		render.Render(w, r, models.ServerErrorRenderer(err))
 		return
 	}
 	defer newFile.Close()
 	if _, err = newFile.Write(fileBytes); err != nil {
-		render.Render(w, r, models.ErrorRenderer(errors.New("cant write file")))
+		render.Render(w, r, models.ServerErrorRenderer(errors.New("cant write file")))
 		return
 	}
-	resp := models.ResponseString{Response: *models.SuccessResponse}
-	resp.Data = append(resp.Data, newPath)
-	if err = render.Render(w, r, &resp); err != nil {
+	dorayaki.ImageURL = Host + FilesURI + newFileName + fileEndings[0]
+	if Host == "" {
+		dorayaki.ImageURL = "http://localhost:8080" + FilesURI + newFileName + fileEndings[0]
+	}
+	if rs := database.DB.Save(&dorayaki); rs.Error != nil {
+		render.Render(w, r, models.ErrorRenderer(rs.Error))
+		return
+	}
+	resp := models.ResponseDorayaki{Response: *models.SuccessResponse}
+	resp.Data = append(resp.Data, dorayaki)
+	if err := render.Render(w, r, &resp); err != nil {
 		render.Render(w, r, models.ServerErrorRenderer(err))
 		return
 	}
