@@ -38,6 +38,9 @@ func main() {
 	if port == "" {
 		port = defaultPort
 	}
+	if handlers.Host == "" {
+		handlers.Host = "http://localhost:8080"
+	}
 	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Fatalf("Error occured: %s", err.Error())

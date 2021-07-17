@@ -194,9 +194,6 @@ func uploadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	dorayaki.ImageURL = Host + FilesURI + newFileName + fileEndings[0]
-	if Host == "" {
-		dorayaki.ImageURL = "http://localhost:8080" + FilesURI + newFileName + fileEndings[0]
-	}
 	if rs := database.DB.Save(&dorayaki); rs.Error != nil {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return

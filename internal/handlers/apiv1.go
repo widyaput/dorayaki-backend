@@ -14,15 +14,24 @@ import (
 )
 
 const FilesURI = "/api/v1/files/"
+const PrefixAPIV1 = "/api/v1/"
 
 var Host = os.Getenv("HOST")
 
 func apiv1(router chi.Router) {
 	router.Post("/signin", signIn)
+	router.Group(func(router chi.Router) {
+		router.Use(authenticator)
+		router.Get("/checkProfile", checkAuth)
+	})
 	fs := http.FileServer(http.Dir(uploadPath))
 	router.Handle("/files/{nameOfFile}", http.StripPrefix("/api/v1/files/", fs))
 	router.Route("/shops", shops)
 	router.Route("/dorayakis", dorayakis)
+}
+
+func checkAuth(w http.ResponseWriter, r *http.Request) {
+
 }
 
 func signIn(w http.ResponseWriter, r *http.Request) {
