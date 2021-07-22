@@ -8,12 +8,14 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math"
 	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -72,6 +74,7 @@ func updateDorayaki(w http.ResponseWriter, r *http.Request) {
 	var newDorayaki models.Dorayaki
 	var oldDorayaki models.Dorayaki
 	if err := render.Bind(r, &newDorayaki); err != nil {
+		log.Print(err.Error())
 		render.Render(w, r, models.ErrBadRequest)
 		return
 	}
@@ -81,9 +84,7 @@ func updateDorayaki(w http.ResponseWriter, r *http.Request) {
 	}
 	oldDorayaki.Deskripsi = newDorayaki.Deskripsi
 	oldDorayaki.Rasa = newDorayaki.Rasa
-	if newDorayaki.ImageURL != "" {
-		oldDorayaki.ImageURL = newDorayaki.ImageURL
-	}
+	oldDorayaki.ImageURL = newDorayaki.ImageURL
 	if rs := database.DB.Save(&oldDorayaki); rs.Error != nil {
 		render.Render(w, r, models.ErrorRenderer((rs.Error)))
 		return
@@ -103,6 +104,10 @@ func deleteDorayaki(w http.ResponseWriter, r *http.Request) {
 	if rs := database.DB.Where("ID = ?", id).First(&oldDorayaki); rs.Error != nil {
 		render.Render(w, r, models.ErrNotFound)
 		return
+	}
+	nameOfImage := strings.ReplaceAll(oldDorayaki.ImageURL, "http://localhost:8080/api/v1/files/", "")
+	if _, err := os.Stat(uploadPath + nameOfImage); err == nil {
+		os.Remove(uploadPath + nameOfImage)
 	}
 	if rs := database.DB.Delete(&models.Dorayaki{}, id); rs.Error != nil {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
