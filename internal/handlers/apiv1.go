@@ -2,9 +2,13 @@ package handlers
 
 import (
 	"dorayaki/internal/models"
+	"errors"
 	"fmt"
+	"io/ioutil"
+	"mime"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -20,9 +24,12 @@ var Host = os.Getenv("HOST")
 
 func apiv1(router chi.Router) {
 	router.Post("/signin", signIn)
+	router.Post("/signout", signOut)
 	router.Group(func(router chi.Router) {
 		router.Use(authenticator)
 		router.Get("/checkProfile", checkAuth)
+		router.Post("/uploads", uploadImage)
+		router.Delete("/images/{nameOfFile}", deleteImage)
 	})
 	fs := http.FileServer(http.Dir(uploadPath))
 	router.Handle("/files/{nameOfFile}", http.StripPrefix("/api/v1/files/", fs))
@@ -32,6 +39,79 @@ func apiv1(router chi.Router) {
 
 func checkAuth(w http.ResponseWriter, r *http.Request) {
 
+}
+
+func deleteImage(w http.ResponseWriter, r *http.Request) {
+	name := chi.URLParam(r, "nameOfFile")
+	err := os.Remove(uploadPath + name)
+	if err != nil {
+		render.Render(w, r, models.ErrorRenderer(err))
+	}
+}
+
+// uploadImage of dorayaki into filesystem
+func uploadImage(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseMultipartForm(maxUploadSize); err != nil {
+		render.Render(w, r, models.ErrorRenderer(err))
+		return
+	}
+	file, fileheader, err := r.FormFile("uploadFile")
+	if err != nil {
+		render.Render(w, r, models.ErrorRenderer(err))
+		return
+	}
+	defer file.Close()
+	fileSize := fileheader.Size
+	if fileSize > maxUploadSize {
+		render.Render(w, r, models.ErrorRenderer(errors.New("file too big")))
+		return
+	}
+	fileBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		render.Render(w, r, models.ErrorRenderer(err))
+		return
+	}
+	detectedFileType := http.DetectContentType(fileBytes)
+	switch detectedFileType {
+	case "image/jpeg", "image/jpg", "image/png":
+		break
+	default:
+		render.Render(w, r, models.ErrorRenderer(errors.New("invalid file type")))
+		return
+	}
+	newFileName := fmt.Sprintf("%d", time.Now().Unix())
+	fileEndings, err := mime.ExtensionsByType(detectedFileType)
+	if err != nil {
+		render.Render(w, r, models.ErrorRenderer(errors.New("cant read file type")))
+		return
+	}
+
+	newPath := filepath.Join(uploadPath, newFileName+fileEndings[0])
+	newFile, err := os.Create(newPath)
+	if err != nil {
+		render.Render(w, r, models.ServerErrorRenderer(err))
+		return
+	}
+	defer newFile.Close()
+	if _, err = newFile.Write(fileBytes); err != nil {
+		render.Render(w, r, models.ServerErrorRenderer(errors.New("cant write file")))
+		return
+	}
+	imageURL := Host + FilesURI + newFileName + fileEndings[0]
+
+	resp := models.ResponseString{Response: *models.SuccessResponse}
+	resp.Data = append(resp.Data, imageURL)
+	if err := render.Render(w, r, &resp); err != nil {
+		render.Render(w, r, models.ServerErrorRenderer(err))
+		return
+	}
+}
+
+func signOut(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:   "token",
+		MaxAge: -1,
+	})
 }
 
 func signIn(w http.ResponseWriter, r *http.Request) {
@@ -63,6 +143,7 @@ func signIn(w http.ResponseWriter, r *http.Request) {
 			ExpiresAt: expirationTime.Unix(),
 		},
 	}
+
 	sign := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), claims)
 	token, err := sign.SignedString([]byte(models.JwtKEY))
 	if err != nil {

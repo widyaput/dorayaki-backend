@@ -6,7 +6,6 @@ require (
 	github.com/Masterminds/squirrel v1.5.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-chi/chi v1.5.4
-	github.com/go-chi/cors v1.2.0
 	github.com/go-chi/render v1.0.1
 	github.com/golang-migrate/migrate/v4 v4.14.1
 	github.com/hashicorp/errwrap v1.1.0 // indirect

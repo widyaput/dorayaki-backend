@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"crypto/rand"
 	"dorayaki/configs/database"
 	"dorayaki/internal/helpers"
 	"dorayaki/internal/models"
@@ -41,12 +40,13 @@ func dorayakis(router chi.Router) {
 				router.Use(authenticator)
 				router.Put("/", updateDorayaki)
 				router.Delete("/", deleteDorayaki)
-				router.Post("/upload", uploadImage)
+				router.Post("/upload", uploadImageDorayaki)
 			})
 		})
 	})
 }
 
+// createDorayaki based on body request
 func createDorayaki(w http.ResponseWriter, r *http.Request) {
 	var dorayaki models.Dorayaki
 	if err := render.Bind(r, &dorayaki); err != nil {
@@ -64,8 +64,9 @@ func createDorayaki(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, models.ServerErrorRenderer((err)))
 		return
 	}
-
 }
+
+// updateDorayaki by id based on body request
 func updateDorayaki(w http.ResponseWriter, r *http.Request) {
 	id := r.Context().Value(keyDorayaki).(int)
 	var newDorayaki models.Dorayaki
@@ -94,6 +95,8 @@ func updateDorayaki(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+// deleteDorayaki by id
 func deleteDorayaki(w http.ResponseWriter, r *http.Request) {
 	id := r.Context().Value(keyDorayaki).(int)
 	var oldDorayaki models.Dorayaki
@@ -106,6 +109,8 @@ func deleteDorayaki(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+// getDorayaki by id
 func getDorayaki(w http.ResponseWriter, r *http.Request) {
 	var dorayaki models.Dorayaki
 	id := r.Context().Value(keyDorayaki).(int)
@@ -120,6 +125,8 @@ func getDorayaki(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+// get all dorayaki
 func getAllDorayaki(w http.ResponseWriter, r *http.Request) {
 	var list []models.Dorayaki
 	if rs := database.DB.Find(&list); rs.Error != nil {
@@ -134,13 +141,8 @@ func getAllDorayaki(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func randToken(len int) string {
-	b := make([]byte, len)
-	rand.Read(b)
-	return fmt.Sprintf("%x", b)
-}
-
-func uploadImage(w http.ResponseWriter, r *http.Request) {
+// uploadImage of dorayaki into filesystem
+func uploadImageDorayaki(w http.ResponseWriter, r *http.Request) {
 	var dorayaki models.Dorayaki
 	id := r.Context().Value(keyDorayaki).(int)
 	if rs := database.DB.Where("ID = ?", id).First(&dorayaki); rs.Error != nil {
@@ -175,8 +177,7 @@ func uploadImage(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, models.ErrorRenderer(errors.New("invalid file type")))
 		return
 	}
-	newFileName := randToken(12)
-	newFileName = fmt.Sprintf("%d", time.Now().Unix()) + newFileName
+	newFileName := fmt.Sprintf("%d", time.Now().Unix())
 	fileEndings, err := mime.ExtensionsByType(detectedFileType)
 	if err != nil {
 		render.Render(w, r, models.ErrorRenderer(errors.New("cant read file type")))
@@ -206,6 +207,7 @@ func uploadImage(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Paginate dorayaki based on query
 func paginateDorayaki(w http.ResponseWriter, r *http.Request) {
 	rawQuery, rawArgs, err := helpers.PaginateAbstract(models.Dorayaki{}.TableName(), r)
 	if err != nil {

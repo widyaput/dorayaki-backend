@@ -117,7 +117,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Toko'
+              $ref: '#/components/schemas/InputToko'
               description: Input shop's data
       responses:
         201:
@@ -257,7 +257,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Toko'
+              $ref: '#/components/schemas/InputToko'
               description: Input new shop's data
       responses:
         200:
@@ -317,7 +317,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorInternalServer'
-  /shops/{shopId}/{dorayakiId}:
+  /shops/{shopId}/stocks/{dorayakiId}:
     get:
       tags:
         - Shops
@@ -521,7 +521,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Dorayaki'
+              $ref: '#/components/schemas/InputDorayaki'
               description: Input dorayaki variant's data
       responses:
         201:
@@ -656,7 +656,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Dorayaki'
+              $ref: '#/components/schemas/InputDorayaki'
               description: Input new dorayaki's data
       responses:
         200:
@@ -786,6 +786,43 @@ components:
       in: query
       name: jwt
   schemas:
+    InputToko:
+      description: Schema for input shop/toko
+      type: object
+      properties:
+        nama:
+          type: string
+          description: Name of shop/toko
+        jalan:
+          type: string
+          description: Street address of shop/toko
+        kecamatan:
+          type: string
+          description: Subdistrict of shop/toko
+        provinsi:
+          type: string
+          description: District/province of shop/toko
+      required:
+        - nama
+        - jalan
+        - kecamatan
+        - provinsi
+    InputDorayaki:
+      description: Schema for input dorayaki
+      type: object
+      properties:
+        rasa:
+          type: string
+          description: Taste of dorayaki
+        deskripsi:
+          type: string
+          description: Description of dorayaki
+        image_url:
+          type: string
+          description: Image URL of dorayaki
+      required:
+        - rasa
+        - deskripsi
     Dorayaki:
       description: Schema for dorayaki
       type: object

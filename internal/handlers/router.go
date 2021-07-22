@@ -1,14 +1,12 @@
 package handlers
 
 import (
-	"dorayaki/configs"
 	"dorayaki/internal/models"
 	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/go-chi/cors"
 	"github.com/go-chi/render"
 )
 
@@ -16,9 +14,13 @@ var CurrentJWT *models.JWT
 
 func NewHandler() http.Handler {
 	router := chi.NewRouter()
-	router.Use(cors.Handler(cors.Options{
-		AllowedOrigins: configs.AllowedOrigins,
-	}))
+	// router.Use(cors.Handler(cors.Options{
+	// 	AllowedOrigins:   configs.AllowedOrigins,
+	// 	AllowCredentials: true,
+	// 	AllowedMethods:   []string{"*"},
+	// 	AllowedHeaders:   []string{"*"},
+	// }))
+	router.Use(Cors)
 	router.Use(middleware.Logger)
 
 	fs := http.FileServer(http.Dir("swaggerui/"))
@@ -47,4 +49,20 @@ func methodNotAllowedHandler(w http.ResponseWriter, r *http.Request) {
 func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-type", "application/json")
 	render.Render(w, r, models.ErrNotFound)
+}
+
+func Cors(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "X-Requested-With, Content-Type")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		// log.Printf("Should set headers")
+
+		if r.Method == "OPTIONS" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }

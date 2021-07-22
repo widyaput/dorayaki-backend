@@ -36,7 +36,7 @@ func shops(router chi.Router) {
 				router.Put("/", updateShop)
 				router.Delete("/", deleteShop)
 			})
-			router.Route("/{dorayakiId}", func(router chi.Router) {
+			router.Route("/stocks/{dorayakiId}", func(router chi.Router) {
 				router.Use(DorayakiContext)
 				router.Get("/", getStok)
 				router.Group(func(router chi.Router) {
@@ -261,6 +261,7 @@ func transferStok(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// paginateShop will return shop based on query
 func paginateShop(w http.ResponseWriter, r *http.Request) {
 	rawQuery, rawArgs, err := helpers.PaginateAbstract(models.Toko{}.TableName(), r)
 	if err != nil {
@@ -277,6 +278,7 @@ func paginateShop(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return
 	}
+	// Should return nil (?)
 	if data == nil {
 		render.Render(w, r, models.ErrNotFound)
 		return
