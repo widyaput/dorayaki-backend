@@ -12,7 +12,7 @@ paths:
   /signin:
     post:
       tags:
-        - Sign In
+        - Authorize
       summary: Authenticate admin to modify database
       description: Authenticate using username password to get JWT token.
       operationId: 'sign in'
@@ -50,6 +50,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorInternalServer'
       deprecated: false
+  /signout:
+    post:
+      tags:
+        - Authorize
+      summary: Signing out by removing cookie
+      responses:
+        200:
+          description: sign out success
+  /checkProfile:
+    get:
+      tags:
+        - Authorize
+      summary: Check if user's authorized
+      responses:
+        200:
+          description: User's authorized
+        401:
+          description: User's not authorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
   /files/{nameOfImage}:
     get:
       tags:
@@ -84,6 +106,78 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorInternalServer'
+  /uploads:
+    post:
+      tags:
+        - Images
+      summary: Upload image to filesystem
+      description: Upload image in to filesystem
+      security:
+        - BearerAuth: []
+          CookieAuth: []
+          QueryAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                uploadFile:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Upload success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StringDataResponse'
+        400:
+          description: Error because invalid body request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorBadRequest'
+        401:
+          description: Error because there is no JWT token. Check if its exist and valid in order of Bearer, Cookie, and then Query.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        500:
+          description: Error because something wrong with internal server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInternalServer'
+  /images/{nameOfImage}:
+    delete:
+      tags:
+        - Images
+      summary: Delete image from filesystem
+      parameters:
+        - name: nameOfImage
+          in: path
+          description: Name of the image that will be fetched
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Delete success
+        401:
+          description: Error because there is no JWT token. Check if its exist and valid in order of Bearer, Cookie, and then Query.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorUnauthorized'
+        404:
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorNotFound'
   /shops:
     get:
       tags:
@@ -133,7 +227,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorBadRequest'
         401:
-          description: Error because wthere is no JWT token. Check if its exist and valid in order of Bearer, Cookie, and then Query.
+          description: Error because there is no JWT token. Check if its exist and valid in order of Bearer, Cookie, and then Query.
           content:
             application/json:
               schema:
@@ -273,7 +367,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorBadRequest'
         401:
-          description: Error because wthere is no JWT token. Check if its exist and valid in order of Bearer, Cookie, and then Query.
+          description: Error because there is no JWT token. Check if its exist and valid in order of Bearer, Cookie, and then Query.
           content:
             application/json:
               schema:
@@ -403,7 +497,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorBadRequest'
         401:
-          description: Error because wthere is no JWT token. Check if its exist and valid in order of Bearer, Cookie, and then Query.
+          description: Error because there is no JWT token. Check if its exist and valid in order of Bearer, Cookie, and then Query.
           content:
             application/json:
               schema:
@@ -477,7 +571,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorBadRequest'
         401:
-          description: Error because wthere is no JWT token. Check if its exist and valid in order of Bearer, Cookie, and then Query.
+          description: Error because there is no JWT token. Check if its exist and valid in order of Bearer, Cookie, and then Query.
           content:
             application/json:
               schema:
@@ -537,7 +631,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorBadRequest'
         401:
-          description: Error because wthere is no JWT token. Check if its exist and valid in order of Bearer, Cookie, and then Query.
+          description: Error because there is no JWT token. Check if its exist and valid in order of Bearer, Cookie, and then Query.
           content:
             application/json:
               schema:
@@ -576,7 +670,7 @@ paths:
             minimum: 1
           description: Index of current page (1 based index)
         - in: query
-          name: kecamatan
+          name: dorayaki
           schema:
             type: string
           description: Rasa dorayaki that want to be searched.
@@ -672,7 +766,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorBadRequest'
         401:
-          description: Error because wthere is no JWT token. Check if its exist and valid in order of Bearer, Cookie, and then Query.
+          description: Error because there is no JWT token. Check if its exist and valid in order of Bearer, Cookie, and then Query.
           content:
             application/json:
               schema:
@@ -760,7 +854,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorBadRequest'
         401:
-          description: Error because wthere is no JWT token. Check if its exist and valid in order of Bearer, Cookie, and then Query.
+          description: Error because there is no JWT token. Check if its exist and valid in order of Bearer, Cookie, and then Query.
           content:
             application/json:
               schema:

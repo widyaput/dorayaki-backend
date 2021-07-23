@@ -43,10 +43,11 @@ func checkAuth(w http.ResponseWriter, r *http.Request) {
 
 func deleteImage(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "nameOfFile")
-	err := os.Remove(uploadPath + name)
-	if err != nil {
-		render.Render(w, r, models.ErrorRenderer(err))
+	if _, err := os.Stat(uploadPath + name); err == nil {
+		os.Remove(uploadPath + name)
+		return
 	}
+	render.Render(w, r, models.ErrNotFound)
 }
 
 // uploadImage of dorayaki into filesystem

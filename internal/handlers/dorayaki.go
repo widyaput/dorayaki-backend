@@ -84,6 +84,12 @@ func updateDorayaki(w http.ResponseWriter, r *http.Request) {
 	}
 	oldDorayaki.Deskripsi = newDorayaki.Deskripsi
 	oldDorayaki.Rasa = newDorayaki.Rasa
+	if oldDorayaki.ImageURL != newDorayaki.ImageURL {
+		nameOfImage := strings.ReplaceAll(oldDorayaki.ImageURL, "http://localhost:8080/api/v1/files/", "")
+		if _, err := os.Stat(uploadPath + nameOfImage); err == nil {
+			os.Remove(uploadPath + nameOfImage)
+		}
+	}
 	oldDorayaki.ImageURL = newDorayaki.ImageURL
 	if rs := database.DB.Save(&oldDorayaki); rs.Error != nil {
 		render.Render(w, r, models.ErrorRenderer((rs.Error)))
@@ -106,6 +112,7 @@ func deleteDorayaki(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	nameOfImage := strings.ReplaceAll(oldDorayaki.ImageURL, "http://localhost:8080/api/v1/files/", "")
+	log.Print(nameOfImage)
 	if _, err := os.Stat(uploadPath + nameOfImage); err == nil {
 		os.Remove(uploadPath + nameOfImage)
 	}
