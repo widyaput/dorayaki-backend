@@ -38,11 +38,11 @@ type ResponseString struct {
 
 type ResponsePaginate struct {
 	Response
-	ItemsPerPage int64  `json:"items_per_page"`
-	TotalItems   int64  `json:"total_items"`
-	PageIndex    int64  `json:"page_index"`
-	TotalPages   int64  `json:"total_pages"`
-	Sort         string `json:"sort"`
+	ItemsPerPage int64    `json:"items_per_page"`
+	TotalItems   int64    `json:"total_items"`
+	PageIndex    int64    `json:"page_index"`
+	TotalPages   int64    `json:"total_pages"`
+	Sort         []string `json:"sort"`
 }
 
 type ResponsePaginateToko struct {
@@ -56,6 +56,12 @@ type ResponsePaginateDorayaki struct {
 	ResponsePaginate
 	Rasa string     `json:"rasa"`
 	Data []Dorayaki `json:"data"`
+}
+
+type ResponsePaginateStokDorayaki struct {
+	ResponsePaginate
+	Rasa string         `json:"rasa"`
+	Data []StokDorayaki `json:"data"`
 }
 
 func (re *Response) Render(w http.ResponseWriter, r *http.Request) error {

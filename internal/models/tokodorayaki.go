@@ -27,6 +27,8 @@ type StokDorayaki struct {
 	DorayakiDeskripsi string `json:"dorayaki_deskripsi"`
 	DorayakiImageURL  string `json:"dorayaki_image_url"`
 	Stok              int64  `json:"stok"`
+	CreatedAt         int64  `json:"created_at"`
+	UpdatedAt         int64  `json:"updated_at"`
 }
 
 type InputStok struct {

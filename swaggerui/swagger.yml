@@ -299,7 +299,7 @@ paths:
       tags:
         - Shops
       summary: Get shop/toko by ID
-      description: Get shop/toko and its all dorayakis
+      description: Get shop/toko by ID
       operationId: getShop
       parameters:
         - in: path
@@ -411,6 +411,60 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorInternalServer'
+  /shops/{shopId}/stocks:
+    get:
+      tags:
+        - Shops
+        - Stocks
+        - Paginate
+      summary: Paginate stock of dorayaki in the shop
+      description: Paginate stock of dorayaki in the shop. If the dorayaki was not added in the shop, then this endpoint will add that dorayaki in the shop with stock = 0.
+      operationId: paginateStock
+      parameters:
+        - in: path
+          name: shopId
+          required: true
+          description: ID of the shop
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: sort
+          schema:
+            type: string
+          description: Determine how data be sorted with name of column. Prefix "-" means descending
+        - in: query
+          name: itemsPerPage
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+          description: Amount of items in 1 page
+        - in: query
+          name: pageIndex
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Index of current page (1 based index)
+        - in: query
+          name: dorayaki
+          schema:
+            type: string
+          description: Rasa dorayaki that want to be searched.
+      responses:
+        200:
+          description: Paginate stock success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginateStockDorayakiResponse'
+        500:
+          description: Error because something wrong with internal server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorInternalServer'
   /shops/{shopId}/stocks/{dorayakiId}:
     get:
       tags:
@@ -480,7 +534,7 @@ paths:
             schema:
               type: object
               properties:
-                add_stock:
+                add_stok:
                   type: integer
                   description: Amount of dorayaki that want to be added. Pass a negative value if want to reduce it.
       responses:
@@ -999,6 +1053,31 @@ components:
         updated_at:
           type: integer
           description: Time since dorayaki's variant restocked to the shop
+    StokDorayaki:
+      description: Schema for dorayaki's stock in the shop
+      type: object
+      properties:
+        dorayaki_id:
+          type: integer
+          description: id of dorayaki
+        dorayaki_rasa:
+          type: string
+          description: flavor of dorayaki
+        dorayaki_deskripsi:
+          type: string
+          description: description of dorayaki
+        dorayaki_image_url:
+          type: string
+          description: image of dorayaki
+        stok:
+          type: integer
+          description: Stock of dorayaki in the shop
+        created_at:
+          type: integer
+          description: Time since dorayaki's variant added to the shop
+        updated_at:
+          type: integer
+          description: Time since dorayaki's variant restocked to the shop
     ErrorBadRequest:
       description: Bad request
       type: object
@@ -1151,7 +1230,7 @@ components:
           items:
             $ref: '#/components/schemas/Toko'
     PaginateDorayakiResponse:
-      description: Response for shop/toko pagination
+      description: Response for dorayaki pagination
       type: object
       properties:
         status_code:
@@ -1186,6 +1265,42 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Dorayaki'
+    PaginateStockDorayakiResponse:
+      description: Response for stock dorayaki pagination
+      type: object
+      properties:
+        status_code:
+          type: integer
+          description: Status code of response
+          default: 200
+        message:
+          type: string
+          description: Message of response
+          default: Success
+        items_per_page:
+          type: integer
+          description: Amount of items in 1 page
+          default: 10
+        total_items:
+          type: integer
+          description: Total amount of items based on query
+        page_index:
+          type: integer
+          description: Index of current page (1 based index)
+          default: 1
+        total_pages:
+          type: integer
+          description: Total pages of pagination result
+        sort:
+          type: string
+          description: Determine how data be sorted with name of column. Prefix "-" means descending
+        rasa:
+          type: string
+          description: Query rasa from input
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StokDorayaki'
     SignIn:
       type: object
       properties:

@@ -3,9 +3,9 @@ package handlers
 import (
 	"context"
 	"dorayaki/configs/database"
-	"dorayaki/internal/helpers"
 	"dorayaki/internal/models"
 	"fmt"
+	"log"
 	"math"
 	"net/http"
 	"strconv"
@@ -23,7 +23,7 @@ const (
 func shops(router chi.Router) {
 	router.Group(func(router chi.Router) {
 		router.Get("/", getAllShop)
-		router.Get("/search", paginateShop)
+		router.Get("/search", paginateShopGorm)
 		router.Group(func(router chi.Router) {
 			router.Use(authenticator)
 			router.Post("/", createShop)
@@ -31,6 +31,7 @@ func shops(router chi.Router) {
 		router.Route("/{shopId}", func(router chi.Router) {
 			router.Use(ShopContext)
 			router.Get("/", getShop)
+			router.Get("/stocks", paginateStock)
 			router.Group(func(router chi.Router) {
 				router.Use(authenticator)
 				router.Put("/", updateShop)
@@ -118,11 +119,11 @@ func deleteShop(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// getShop will retrive specific shop by id and retrieve all dorayaki it has.
+// getShop will retrive specific shop by id.
 func getShop(w http.ResponseWriter, r *http.Request) {
 	var shop models.Toko
 	id := r.Context().Value(keyShop).(int)
-	if rs := database.DB.Where("id = ?", id).Preload("Dorayaki").Preload("Stok").
+	if rs := database.DB.Where("id = ?", id).
 		First(&shop); rs.Error != nil {
 		render.Render(w, r, models.ErrNotFound)
 		return
@@ -145,6 +146,59 @@ func getAllShop(w http.ResponseWriter, r *http.Request) {
 	resp := models.ResponseToko{Response: *models.SuccessResponse}
 	resp.Data = list
 	if err := render.Render(w, r, &resp); err != nil {
+		render.Render(w, r, models.ServerErrorRenderer(err))
+		return
+	}
+}
+
+func paginateStock(w http.ResponseWriter, r *http.Request) {
+	var data []models.StokDorayaki
+	idShop := r.Context().Value(keyShop).(int)
+	rasa := r.URL.Query().Get("dorayaki")
+	cond := database.DB.
+		Model(&models.TokoDorayaki{}).
+		Select("dorayaki.id as dorayaki_id, dorayaki.rasa as dorayaki_rasa, dorayaki.deskripsi as dorayaki_deskripsi, dorayaki.image_url as dorayaki_image_url, toko_dorayaki.stok as stok, toko_dorayaki.created_at as created_at, toko_dorayaki.updated_at as updated_at").
+		Joins("join dorayaki on toko_dorayaki.dorayaki_id = dorayaki.id").
+		Where("toko_dorayaki.toko_id = ? AND rasa LIKE ? ", idShop, "%"+rasa+"%")
+	totalItems := cond.Find(&models.StokDorayaki{}).RowsAffected
+	sort := r.URL.Query()["sort"]
+	idxPage, err := strconv.Atoi(r.URL.Query().Get("pageIndex"))
+	if err != nil {
+		idxPage = 1
+	}
+	itemsPerPage, err := strconv.Atoi(r.URL.Query().Get("itemsPerPage"))
+	if err != nil {
+		itemsPerPage = 10
+	}
+	if sort != nil {
+		var orderBy string
+		for _, sorts := range sort {
+			orderBy = "toko_dorayaki." + sorts
+			if sorts[0] == '-' {
+				orderBy = "toko_dorayaki." + sorts[1:] + " desc"
+			}
+			cond = cond.Order(orderBy)
+		}
+	}
+	cond = cond.Limit(itemsPerPage).Offset(itemsPerPage * (idxPage - 1))
+	if rs := cond.Find(&data); rs.Error != nil {
+		render.Render(w, r, models.ServerErrorRenderer(rs.Error))
+		return
+	}
+	respPaginate := models.ResponsePaginate{
+		Response:     *models.SuccessResponse,
+		ItemsPerPage: int64(itemsPerPage),
+		TotalItems:   totalItems,
+		PageIndex:    int64(idxPage),
+		TotalPages:   int64(math.Ceil(float64(totalItems) / float64(itemsPerPage))),
+		Sort:         sort,
+	}
+	resp := models.ResponsePaginateStokDorayaki{
+		ResponsePaginate: respPaginate,
+		Rasa:             r.URL.Query().Get("dorayaki"),
+		Data:             data,
+	}
+	if err = render.Render(w, r, &resp); err != nil {
 		render.Render(w, r, models.ServerErrorRenderer(err))
 		return
 	}
@@ -199,6 +253,7 @@ func addStok(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	stok.Stok += addStock.AddStok
+	log.Print(stok.Stok)
 	if rs := database.DB.Save(&stok); rs.Error != nil {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return
@@ -261,50 +316,43 @@ func transferStok(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// paginateShop will return shop based on query
-func paginateShop(w http.ResponseWriter, r *http.Request) {
-	rawQuery, rawArgs, err := helpers.PaginateAbstract(models.Toko{}.TableName(), r)
-	if err != nil {
-		render.Render(w, r, models.ServerErrorRenderer(err))
-		return
-	}
-	totalRawQuery, totalRawArgs, err := helpers.TakeQuery(models.Toko{}.TableName(), r).ToSql()
-	if err != nil {
-		render.Render(w, r, models.ServerErrorRenderer(err))
-		return
-	}
+func paginateShopGorm(w http.ResponseWriter, r *http.Request) {
 	var data []models.Toko
-	if rs := database.DB.Raw(rawQuery, rawArgs...).Scan(&data); rs.Error != nil {
-		render.Render(w, r, models.ErrorRenderer(rs.Error))
-		return
-	}
-	// Should return nil (?)
-	if data == nil {
-		render.Render(w, r, models.ErrNotFound)
-		return
-	}
-	var totalData []models.Toko
-	if rs := database.DB.Raw(totalRawQuery, totalRawArgs...).Scan(&totalData); rs.Error != nil {
-		render.Render(w, r, models.ErrorRenderer(rs.Error))
-		return
-	}
-	sort := r.URL.Query().Get("sort")
-	var idxPage int
-	var itemsPerPage int
-	idxPage, err = strconv.Atoi(r.URL.Query().Get("pageIndex"))
+	kecamatan := r.URL.Query().Get("kecamatan")
+	provinsi := r.URL.Query().Get("provinsi")
+	cond := database.DB.Where("kecamatan LIKE ? AND provinsi LIKE ?", "%"+kecamatan+"%", "%"+provinsi+"%")
+	totalItems := cond.Find(&models.Toko{}).RowsAffected
+	sort := r.URL.Query()["sort"]
+	idxPage, err := strconv.Atoi(r.URL.Query().Get("pageIndex"))
 	if err != nil {
 		idxPage = 1
 	}
-	itemsPerPage, err = strconv.Atoi(r.URL.Query().Get("itemsPerPage"))
+	itemsPerPage, err := strconv.Atoi(r.URL.Query().Get("itemsPerPage"))
 	if err != nil {
 		itemsPerPage = 10
+	}
+	if sort != nil {
+		var orderBy string
+		for _, sorts := range sort {
+			orderBy = sorts
+			if sorts[0] == '-' {
+				orderBy = sorts[1:] + " desc"
+			}
+			cond = cond.Order(orderBy)
+		}
+	}
+
+	cond = cond.Limit(itemsPerPage).Offset(itemsPerPage * (idxPage - 1))
+	if rs := cond.Find(&data); rs.Error != nil {
+		render.Render(w, r, models.ServerErrorRenderer(rs.Error))
+		return
 	}
 	respPaginate := models.ResponsePaginate{
 		Response:     *models.SuccessResponse,
 		ItemsPerPage: int64(itemsPerPage),
-		TotalItems:   int64(len(totalData)),
+		TotalItems:   totalItems,
 		PageIndex:    int64(idxPage),
-		TotalPages:   int64(math.Ceil(float64(len(totalData)) / float64(itemsPerPage))),
+		TotalPages:   int64(math.Ceil(float64(totalItems) / float64(itemsPerPage))),
 		Sort:         sort,
 	}
 	resp := models.ResponsePaginateToko{

@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"dorayaki/configs/database"
-	"dorayaki/internal/helpers"
 	"dorayaki/internal/models"
 	"errors"
 	"fmt"
@@ -30,7 +29,7 @@ const uploadPath = "internal/assets/"
 func dorayakis(router chi.Router) {
 	router.Group(func(router chi.Router) {
 		router.Get("/", getAllDorayaki)
-		router.Get("/search", paginateDorayaki)
+		router.Get("/search", paginateDorayakiGorm)
 		router.Group(func(router chi.Router) {
 			router.Use(authenticator)
 			router.Post("/", createDorayaki)
@@ -219,49 +218,47 @@ func uploadImageDorayaki(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Paginate dorayaki based on query
-func paginateDorayaki(w http.ResponseWriter, r *http.Request) {
-	rawQuery, rawArgs, err := helpers.PaginateAbstract(models.Dorayaki{}.TableName(), r)
-	if err != nil {
-		render.Render(w, r, models.ServerErrorRenderer(err))
-		return
-	}
-	totalRawQuery, totalRawArgs, err := helpers.TakeQuery(models.Dorayaki{}.TableName(), r).ToSql()
-	if err != nil {
-		render.Render(w, r, models.ServerErrorRenderer(err))
-		return
-	}
+func paginateDorayakiGorm(w http.ResponseWriter, r *http.Request) {
 	var data []models.Dorayaki
-	if rs := database.DB.Raw(rawQuery, rawArgs...).Scan(&data); rs.Error != nil {
-		render.Render(w, r, models.ServerErrorRenderer(rs.Error))
-		return
-	}
-	var totalData []models.Dorayaki
-	if rs := database.DB.Raw(totalRawQuery, totalRawArgs...).Scan(&totalData); rs.Error != nil {
-		render.Render(w, r, models.ServerErrorRenderer(rs.Error))
-		return
-	}
-
-	var idxPage int
-	var itemsPerPage int
-	idxPage, err = strconv.Atoi(r.URL.Query().Get("pageIndex"))
+	rasa := r.URL.Query().Get("dorayaki")
+	cond := database.DB.Where("rasa LIKE ?", "%"+rasa+"%")
+	totalItems := cond.Find(&models.Dorayaki{}).RowsAffected
+	sort := r.URL.Query()["sort"]
+	idxPage, err := strconv.Atoi(r.URL.Query().Get("pageIndex"))
 	if err != nil {
 		idxPage = 1
 	}
-	itemsPerPage, err = strconv.Atoi(r.URL.Query().Get("itemsPerPage"))
+	itemsPerPage, err := strconv.Atoi(r.URL.Query().Get("itemsPerPage"))
 	if err != nil {
 		itemsPerPage = 10
+	}
+	if sort != nil {
+		var orderBy string
+		for _, sorts := range sort {
+			orderBy = sorts
+			if sorts[0] == '-' {
+				orderBy = sorts[1:] + " desc"
+			}
+			cond = cond.Order(orderBy)
+		}
+	}
+
+	cond = cond.Limit(itemsPerPage).Offset(itemsPerPage * (idxPage - 1))
+	if rs := cond.Find(&data); rs.Error != nil {
+		render.Render(w, r, models.ServerErrorRenderer(rs.Error))
+		return
 	}
 	respPaginate := models.ResponsePaginate{
 		Response:     *models.SuccessResponse,
 		ItemsPerPage: int64(itemsPerPage),
-		TotalItems:   int64(len(totalData)),
+		TotalItems:   totalItems,
 		PageIndex:    int64(idxPage),
-		TotalPages:   int64(math.Ceil(float64(len(totalData)) / float64(itemsPerPage))),
+		TotalPages:   int64(math.Ceil(float64(totalItems) / float64(itemsPerPage))),
+		Sort:         sort,
 	}
 	resp := models.ResponsePaginateDorayaki{
 		ResponsePaginate: respPaginate,
-		Rasa:             r.URL.Query().Get("rasa"),
+		Rasa:             r.URL.Query().Get("dorayaki"),
 		Data:             data,
 	}
 	if err = render.Render(w, r, &resp); err != nil {
