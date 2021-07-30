@@ -14,12 +14,6 @@ var CurrentJWT *models.JWT
 
 func NewHandler() http.Handler {
 	router := chi.NewRouter()
-	// router.Use(cors.Handler(cors.Options{
-	// 	AllowedOrigins:   configs.AllowedOrigins,
-	// 	AllowCredentials: true,
-	// 	AllowedMethods:   []string{"*"},
-	// 	AllowedHeaders:   []string{"*"},
-	// }))
 	router.Use(Cors)
 	router.Use(middleware.Logger)
 

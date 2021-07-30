@@ -19,6 +19,6 @@ RUN go get github.com/cosmtrek/air
 # RUN chmod +x ./scripts/init-dev-server.sh
 
 # Run the server
-CMD ["bash", "./scripts/init-dev-server.sh"]
+CMD ["bash", "./scripts/init-prod-server.sh"]
 
 EXPOSE 8080

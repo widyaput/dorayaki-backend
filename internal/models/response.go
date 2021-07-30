@@ -31,6 +31,15 @@ type ResponseStok struct {
 	Data []TokoDorayaki `json:"data"`
 }
 
+type ResponseAuth struct {
+	Response
+	Data struct {
+		Username string `json:"username"`
+		Exp      int64  `json:"exp"`
+		Token    string `json:"token"`
+	} `json:"data"`
+}
+
 type ResponseString struct {
 	Response
 	Data []string `json:"data"`

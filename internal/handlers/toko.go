@@ -5,7 +5,6 @@ import (
 	"dorayaki/configs/database"
 	"dorayaki/internal/models"
 	"fmt"
-	"log"
 	"math"
 	"net/http"
 	"strconv"
@@ -160,7 +159,7 @@ func paginateStock(w http.ResponseWriter, r *http.Request) {
 		Select("dorayaki.id as dorayaki_id, dorayaki.rasa as dorayaki_rasa, dorayaki.deskripsi as dorayaki_deskripsi, dorayaki.image_url as dorayaki_image_url, toko_dorayaki.stok as stok, toko_dorayaki.created_at as created_at, toko_dorayaki.updated_at as updated_at").
 		Joins("join dorayaki on toko_dorayaki.dorayaki_id = dorayaki.id").
 		Where("toko_dorayaki.toko_id = ? AND rasa LIKE ? ", idShop, "%"+rasa+"%")
-	totalItems := cond.Find(&models.StokDorayaki{}).RowsAffected
+	totalItems := cond.Find(&[]models.StokDorayaki{}).RowsAffected
 	sort := r.URL.Query()["sort"]
 	idxPage, err := strconv.Atoi(r.URL.Query().Get("pageIndex"))
 	if err != nil {
@@ -253,7 +252,6 @@ func addStok(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	stok.Stok += addStock.AddStok
-	log.Print(stok.Stok)
 	if rs := database.DB.Save(&stok); rs.Error != nil {
 		render.Render(w, r, models.ErrorRenderer(rs.Error))
 		return
@@ -321,7 +319,7 @@ func paginateShopGorm(w http.ResponseWriter, r *http.Request) {
 	kecamatan := r.URL.Query().Get("kecamatan")
 	provinsi := r.URL.Query().Get("provinsi")
 	cond := database.DB.Where("kecamatan LIKE ? AND provinsi LIKE ?", "%"+kecamatan+"%", "%"+provinsi+"%")
-	totalItems := cond.Find(&models.Toko{}).RowsAffected
+	totalItems := cond.Find(&[]models.Toko{}).RowsAffected
 	sort := r.URL.Query()["sort"]
 	idxPage, err := strconv.Atoi(r.URL.Query().Get("pageIndex"))
 	if err != nil {

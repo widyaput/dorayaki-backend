@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math"
 	"mime"
 	"net/http"
@@ -73,7 +72,6 @@ func updateDorayaki(w http.ResponseWriter, r *http.Request) {
 	var newDorayaki models.Dorayaki
 	var oldDorayaki models.Dorayaki
 	if err := render.Bind(r, &newDorayaki); err != nil {
-		log.Print(err.Error())
 		render.Render(w, r, models.ErrBadRequest)
 		return
 	}
@@ -111,7 +109,6 @@ func deleteDorayaki(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	nameOfImage := strings.ReplaceAll(oldDorayaki.ImageURL, "http://localhost:8080/api/v1/files/", "")
-	log.Print(nameOfImage)
 	if _, err := os.Stat(uploadPath + nameOfImage); err == nil {
 		os.Remove(uploadPath + nameOfImage)
 	}
@@ -222,7 +219,7 @@ func paginateDorayakiGorm(w http.ResponseWriter, r *http.Request) {
 	var data []models.Dorayaki
 	rasa := r.URL.Query().Get("dorayaki")
 	cond := database.DB.Where("rasa LIKE ?", "%"+rasa+"%")
-	totalItems := cond.Find(&models.Dorayaki{}).RowsAffected
+	totalItems := cond.Find(&[]models.Dorayaki{}).RowsAffected
 	sort := r.URL.Query()["sort"]
 	idxPage, err := strconv.Atoi(r.URL.Query().Get("pageIndex"))
 	if err != nil {

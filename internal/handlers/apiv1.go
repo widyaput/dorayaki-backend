@@ -1,7 +1,11 @@
 package handlers
 
 import (
+	"dorayaki/configs/database"
+	"dorayaki/internal/helpers"
 	"dorayaki/internal/models"
+	b64 "encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -38,7 +42,23 @@ func apiv1(router chi.Router) {
 }
 
 func checkAuth(w http.ResponseWriter, r *http.Request) {
-
+	token := findTokens(r, tokenFromHeader, tokenFromCookie, tokenFromQuery)
+	// at this moment, token must be available, because we using authenticator middleware
+	users := strings.Split(token, ".")
+	userDec, _ := b64.StdEncoding.DecodeString(users[1] + "==")
+	resp := models.ResponseAuth{Response: *models.SuccessResponse}
+	resp.Data.Token = token
+	data := struct {
+		Username string `json:"username"`
+		Exp      int64  `json:"exp"`
+	}{}
+	json.Unmarshal(userDec, &data)
+	resp.Data.Username = data.Username
+	resp.Data.Exp = data.Exp
+	if err := render.Render(w, r, &resp); err != nil {
+		render.Render(w, r, models.ServerErrorRenderer(err))
+		return
+	}
 }
 
 func deleteImage(w http.ResponseWriter, r *http.Request) {
@@ -117,25 +137,18 @@ func signOut(w http.ResponseWriter, r *http.Request) {
 
 func signIn(w http.ResponseWriter, r *http.Request) {
 	var cred models.Credentials
+	var trueCred models.Credentials
 	if err := render.Bind(r, &cred); err != nil {
 		render.Render(w, r, models.ErrBadRequest)
 		return
 	}
-	expectedPassword, ok := models.Users[cred.Username]
-	if !ok {
+	if rs := database.DB.Where("username = ?", cred.Username).First(&trueCred); rs.Error != nil {
 		render.Render(w, r, models.ErrUnauthorized)
 		return
 	}
-	if expectedPassword != cred.Password {
-		if expectedPassword != "" {
-			render.Render(w, r, models.ErrUnauthorized)
-			return
-		}
-		// for dev only
-		if cred.Password != "dorayakidev" {
-			render.Render(w, r, models.ErrUnauthorized)
-			return
-		}
+	if !helpers.CheckPasswordHash(cred.Password, trueCred.Password) {
+		render.Render(w, r, models.ErrUnauthorized)
+		return
 	}
 	expirationTime := time.Now().Add(1 * time.Hour)
 	claims := &models.JWT{

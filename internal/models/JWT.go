@@ -9,13 +9,14 @@ import (
 )
 
 var JwtKEY = os.Getenv("JWTKEY")
-var Users = map[string]string{
-	"Admin": os.Getenv("PWD_ADMIN"),
-}
 
 type Credentials struct {
-	Password string `json:"password"`
-	Username string `json:"username"`
+	Username string `json:"username" gorm:"primaryKey"`
+	Password string `json:"password" gorm:"not null"`
+}
+
+func (Credentials) TableName() string {
+	return "credentials"
 }
 
 type JWT struct {

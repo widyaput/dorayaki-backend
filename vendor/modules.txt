@@ -31,9 +31,11 @@ github.com/jinzhu/inflection
 github.com/jinzhu/now
 # github.com/stretchr/testify v1.7.0
 ## explicit
-# golang.org/x/net v0.0.0-20210326220855-61e056675ecf
+# golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 ## explicit
-# golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1
+golang.org/x/crypto/bcrypt
+golang.org/x/crypto/blowfish
+# golang.org/x/net v0.0.0-20210326220855-61e056675ecf
 ## explicit
 # gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 ## explicit
