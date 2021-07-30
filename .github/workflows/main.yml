@@ -32,6 +32,6 @@ jobs:
             git pull origin master
             sudo docker-compose -f deployments/compose-prod/docker-compose.yml -p dorayaki down
             sudo docker-compose -f deployments/compose-prod/docker-compose.yml -p dorayaki up --build -d
-            sudo docker rmi $(docker images --filter "dangling=true" -q --no-trunc)
+            sudo docker rmi $(sudo docker images --filter "dangling=true" -q --no-trunc)
             
 
