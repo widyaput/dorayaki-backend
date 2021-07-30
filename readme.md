@@ -16,7 +16,7 @@ Project ini dibagi menjadi dua bagian, Backend dan Frontend. Project ini dibuat 
 Repository ini untuk bagian backend.
 
 ## Swagger
-Klik link berikut [ini](https://api.dorayaki.wiwid.me/docs/api/v1/)
+Klik link berikut [ini](https://api.dorayaki.wiwid.me/docs/api/v1/) (semoga tidak down)
 
 ## Technologies
 * Docker
@@ -59,9 +59,11 @@ lalu pilih container yang sesuai
 
 ## Features
 List of features ready and TODOs for future development
-* Dideploy pada [url](https://api.dorayaki.wiwid.me/) walau terkadang sering down apalagi ketika membuild bagian frontend. Disetting menggunakan Github Actions.
+* Dideploy pada [url](https://api.dorayaki.wiwid.me/) walau terkadang sering down apalagi ketika membuild bagian frontend. Disetting menggunakan Github Actions. Terkadang yang membuat Github Actions error adalah command menghapus docker images yang banyak tetapi tidak ada containernya, terkadang tidak ada images yang dimaksud.
 * Fitur search sekaligus paginasi pada dorayaki dan toko.
 * Fitur login layaknya CMS pada umumnya. Silahkan cari credentialnya di package seeds biar seru :D
+* Fitur CRUD pada dorayaki, toko, dan stok dorayaki tiap tokonya.
+* Foto dorayaki yang diupload disimpan dalam filesystem.
 
 ## Status
 Project is: _finished_
