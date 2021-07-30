@@ -12,8 +12,6 @@ RUN apt update
 RUN go mod tidy \
     && go mod vendor
 
-# Install air
-RUN go get github.com/cosmtrek/air
 
 # # Change script permission
 # RUN chmod +x ./scripts/init-dev-server.sh
