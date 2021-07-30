@@ -19,6 +19,13 @@ func ConnectDB() error {
 	pwd := os.Getenv("MYSQL_PASSWORD")
 	p := os.Getenv("MYSQL_PORT")
 	d := os.Getenv("MYSQL_DATABASE")
+	if h == "" {
+		h = "localhost"
+		u = "root"
+		pwd = "root"
+		p = "3306"
+		d = "dorayaki"
+	}
 	dsn := u + ":" + pwd + "@tcp(" + h + ":" + p + ")/" + d + "?charset=utf8mb4&parseTime=True&loc=Local"
 
 	dbConnection, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})

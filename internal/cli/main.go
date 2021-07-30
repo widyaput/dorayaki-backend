@@ -127,7 +127,13 @@ Database drivers: `+strings.Join(database.List(), ", ")+"\n", createUsage, gotoU
 		pwd := os.Getenv("MYSQL_PASSWORD")
 		p := os.Getenv("MYSQL_PORT")
 		d := os.Getenv("MYSQL_DATABASE")
-
+		if h == "" {
+			h = "localhost"
+			u = "root"
+			pwd = "root"
+			p = "3306"
+			d = "dorayaki"
+		}
 		dsn := "mysql://" + u + ":" + pwd + "@tcp(" + h + ":" + p + ")/" + d + "?charset=utf8mb4&parseTime=True&loc=Local"
 		databasePtr = &dsn
 	}
