@@ -46,7 +46,11 @@ saja
 
 3. Untuk menjalankan seeder, Anda harus melakukan perintah
 ```bash
-docker exec -it ${id container app} bash && go run cmd/server/main.go seed
+docker exec -it ${id container app} bash
+```
+lalu menjalankan perintah pada bash dalam docker
+```bash
+go run cmd/server/main.go seed
 ```
 id container dapat dilihat menggunakan perintah
 ```bash
