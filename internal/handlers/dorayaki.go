@@ -192,6 +192,9 @@ func uploadImageDorayaki(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	newPath := filepath.Join(uploadPath, newFileName+fileEndings[0])
+	if _, err := os.Stat(uploadPath); os.IsNotExist(err) {
+		os.Mkdir(uploadPath, os.ModePerm)
+	}
 	newFile, err := os.Create(newPath)
 	if err != nil {
 		render.Render(w, r, models.ServerErrorRenderer(err))
