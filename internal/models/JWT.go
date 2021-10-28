@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/dgrijalva/jwt-go"
+	jwt "github.com/golang-jwt/jwt/v4"
 )
 
 var JwtKEY = os.Getenv("JWTKEY")

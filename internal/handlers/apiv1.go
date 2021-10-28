@@ -16,9 +16,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
+	jwt "github.com/golang-jwt/jwt/v4"
 )
 
 const FilesURI = "/api/v1/files/"
