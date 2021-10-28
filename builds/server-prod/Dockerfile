@@ -9,8 +9,7 @@ WORKDIR /app
 RUN apt update
 
 # Install and tidy golang dependency for server
-RUN go mod tidy \
-    && go mod vendor
+RUN go mod tidy
 
 
 # # Change script permission
