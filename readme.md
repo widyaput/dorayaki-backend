@@ -63,7 +63,6 @@ lalu pilih container yang sesuai
 
 ## Features
 List of features ready and TODOs for future development
-* Pernah dideploy pada [url](https://api.dorayaki.wiwid.me/), sekarang servernya dimatikan karena keterbatasan biaya. Disetting menggunakan Github Actions.
 * Fitur search sekaligus paginasi pada dorayaki dan toko.
 * Fitur login layaknya CMS pada umumnya. Pada seed terdapat kredensial "admin":"dorayakidev" untuk login sebagai admin. Bisa ditambahkan sesuka hati melalui seeding atau tambah langsung pada model Credentials.
 * Fitur CRUD pada dorayaki, toko, dan stok dorayaki tiap tokonya.
