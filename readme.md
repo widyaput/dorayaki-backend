@@ -69,8 +69,7 @@ List of features ready and TODOs for future development
 * Foto dorayaki yang diupload disimpan dalam filesystem.
 
 ## Status
-Project is: _on improvement_
-Ternyata ada _vulnerability_ pada dependensi JWT. Akan segera migrasi ke dependensi lainnya.
+Project is: _finished_
 
 ## Contact
 Created by Widya Anugrah Putra - feel free to contact me!
